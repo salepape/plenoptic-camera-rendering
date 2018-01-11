@@ -192,8 +192,8 @@ bool ContainingInteriorsPointObjectCondition::operator()(const Vector3d& point, 
 }
 
 
-TracePixel::TracePixel(shared_ptr<SceneData> sd, const Camera* cam, TraceThreadData *td, unsigned int mtl, DBL adcb, const QualityFlags& qf,
-                       CooperateFunctor& cf, MediaFunctor& mf, RadiosityFunctor& af, bool pt) :
+TracePixel::TracePixel(shared_ptr<SceneData> sd, const Camera* cam, TraceThreadData *td, unsigned int mtl, DBL adcb,
+                       const QualityFlags& qf, CooperateFunctor& cf, MediaFunctor& mf, RadiosityFunctor& af, bool pt) :
                        Trace(sd, td, qf, cf, mf, af),
                        sceneData(sd),
                        threadData(td),
@@ -329,6 +329,7 @@ void TracePixel::operator()(DBL x, DBL y, DBL width, DBL height, RGBTColour& col
         TraceRayWithFocalBlur(colour, x, y, width, height);
 }
 
+
 bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, size_t ray_number)
 {
     DBL x0 = 0.0, y0 = 0.0;
@@ -342,8 +343,42 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
     // Create primary ray according to the camera used.
     ray.Origin = cameraLocation;
 
+
+
     switch(camera.Type)
     {
+        // Converging lens camera. (notion de lentille l.1344)
+        DBL Object_Distance, Lens_Canvas_Distance;
+        DBL alpha_x, alpha_y;
+        case CONVERGING_LENS_CAMERA:
+            // Normalize this pixel position using the frame's dimensions.
+            // Convert the x coordinate to be a DBL from -0.5 to 0.5.(questionable choice)
+            x0 = x / width - 0.5;
+
+            // Convert the y coordinate to be a DBL from -0.5 to 0.5. (questionable choice)
+            y0 = 0.5 - y / height;
+
+            // Data entry (in meters)
+            camera.Focal_Distance = 0.05;
+            Object_Distance = 2.0;
+            Lens_Canvas_Distance = 0.01;
+
+            // Obtained by trigonometric functions
+            alpha_x = atan(camera.Focal_Distance * tan(camera.H_Angle) / (camera.Focal_Distance + Object_Distance + Lens_Canvas_Distance));
+            alpha_y = atan(camera.Focal_Distance * tan(camera.V_Angle) / (camera.Focal_Distance + Object_Distance + Lens_Canvas_Distance));
+
+            ray.Direction = cameraDirection + x0 * cameraRight * alpha_x + y0 * cameraUp * alpha_y;
+
+            //ray.Origin = cameraLocation;
+
+            if(useFocalBlur)
+            {
+                JitterCameraRay(ray, x, y, ray_number);
+            }
+
+            InitRayContainerState(ray, true);
+            break;
+
         // Perspective projection (Pinhole camera; POV standard).
         case PERSPECTIVE_CAMERA:
             // Convert the x coordinate to be a DBL from -0.5 to 0.5.
@@ -357,7 +392,9 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
 
             // Do focal blurring (by Dan Farmer).
             if(useFocalBlur)
+            {
                 JitterCameraRay(ray, x, y, ray_number);
+            }
 
             InitRayContainerState(ray, useFocalBlur);
             break;
@@ -376,10 +413,14 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
             ray.Origin = cameraLocation + x0 * cameraRight + y0 * cameraUp;
 
             if(useFocalBlur)
+            {
                 JitterCameraRay(ray, x, y, ray_number);
+            }
 
             InitRayContainerState(ray, true);
             break;
+
+
 
         // Fisheye camera.
         case FISHEYE_CAMERA:
@@ -396,7 +437,6 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
             rad = sqrt(x0 * x0 + y0 * y0);
 
             // If the pixel lies outside the unit circle no ray is traced.
-
             if(rad > 1.0)
                 return false;
 
@@ -450,7 +490,6 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
             rad = sqrt(x0 * x0 + y0 * y0);
 
             // If the pixel lies outside the unit circle no ray is traced.
-
             if(rad > 1.0)
                 return false;
 
@@ -900,6 +939,30 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
 
             InitRayContainerState(ray, true);
             break;
+
+
+        /*
+        case PLENOPTIC_CAMERA:
+            // Convert the x coordinate to be a DBL from ... to ....
+            x0 = ...;
+
+            // Convert the y coordinate to be a DBL from ... to ....
+            y0 = ...;
+
+            // Create primary ray.
+            ...
+
+            // Do focal blurring (by Dan Farmer).
+            if(useFocalBlur)
+            {
+                JitterCameraRay(ray, x, y, ray_number);
+            }
+
+            InitRayContainerState(ray, useFocalBlur);
+
+            break;
+        */
+
 
         default:
             throw POV_EXCEPTION_STRING("Unknown camera type in CreateCameraRay().");

@@ -47,6 +47,196 @@
 namespace pov
 {
 
+
+/*****************************************************************************
+*
+* FUNCTION
+*
+*   Create_Camera
+*
+* INPUT
+*
+* OUTPUT
+*
+* RETURNS
+*
+* AUTHOR
+*
+*   POV-Ray Team
+*
+* DESCRIPTION
+*
+*   -
+*
+* CHANGES
+*
+*   -
+*
+******************************************************************************/
+
+Camera::Camera()
+{
+    Init();
+}
+
+
+Camera::Camera(const Camera& src)
+{
+    Tnormal = NULL;
+    Trans = NULL;
+    Bokeh = NULL;
+    for (unsigned int i = 0; i < 3; ++i)
+    {
+        Location_Fn[i]  = NULL;
+        Direction_Fn[i] = NULL;
+    }
+    operator=(src);
+}
+
+
+
+/*****************************************************************************
+*
+* FUNCTION
+*
+*   Destroy_Camera
+*
+* INPUT
+*
+* OUTPUT
+*
+* RETURNS
+*
+* AUTHOR
+*
+*   Dieter Bayer
+*
+* DESCRIPTION
+*
+*   -
+*
+* CHANGES
+*
+*   -
+*
+******************************************************************************/
+
+Camera::~Camera()
+{
+    Destroy_Tnormal(Tnormal);
+    Destroy_Transform(Trans);
+    Destroy_Pigment(Bokeh);
+    for (std::vector<ObjectPtr>::iterator it = Meshes.begin(); it != Meshes.end(); it++)
+        Destroy_Object(*it);
+    Meshes.clear();
+    for (unsigned int i = 0; i < 3; ++i)
+    {
+        if (Location_Fn[i] != NULL)
+            delete Location_Fn[i];
+        if (Direction_Fn[i] != NULL)
+            delete Direction_Fn[i];
+    }
+}
+
+
+
+/*****************************************************************************
+*
+* FUNCTION
+*
+*   Copy_Camera
+*
+* INPUT
+*
+* OUTPUT
+*
+* RETURNS
+*
+* AUTHOR
+*
+*   POV-Ray Team
+*
+* DESCRIPTION
+*
+*   -
+*
+* CHANGES
+*
+*   -
+*
+******************************************************************************/
+
+Camera& Camera::operator=(const Camera& src)
+{
+    Location    = src.Location;
+    Direction   = src.Direction;
+    Up          = src.Up;
+    Right       = src.Right;
+    Sky         = src.Sky;
+    Look_At     = src.Look_At;
+    Focal_Point = src.Focal_Point;
+
+    Focal_Distance = src.Focal_Distance;
+    Aperture = src.Aperture;
+    Blur_Samples = src.Blur_Samples;
+    Blur_Samples_Min = src.Blur_Samples_Min;
+    Confidence = src.Confidence;
+    Variance = src.Variance;
+    Type = src.Type;
+    Angle = src.Angle;
+    H_Angle = src.H_Angle;
+    V_Angle = src.V_Angle;
+
+    if (Tnormal != NULL)
+        Destroy_Tnormal(Tnormal);
+    Tnormal = src.Tnormal ? Copy_Tnormal(src.Tnormal) : NULL;
+    if (Trans != NULL)
+        Destroy_Transform(Trans);
+    Trans = src.Trans ? Copy_Transform(src.Trans) : NULL;
+
+    if (Bokeh != NULL)
+        Destroy_Pigment(Bokeh);
+    Bokeh = src.Bokeh ? Copy_Pigment(src.Bokeh) : NULL;
+
+    for (std::vector<ObjectPtr>::iterator it = Meshes.begin(); it != Meshes.end(); it++)
+        Destroy_Object(*it);
+    Meshes.clear();
+    for (std::vector<ObjectPtr>::const_iterator it = src.Meshes.begin(); it != src.Meshes.end(); it++)
+        Meshes.push_back(Copy_Object(*it));
+    Face_Distribution_Method = src.Face_Distribution_Method;
+    Rays_Per_Pixel = src.Rays_Per_Pixel;
+    Max_Ray_Distance = src.Max_Ray_Distance;
+    Mesh_Index = src.Mesh_Index;
+    for (int i = 0; i < 10; i++)
+    {
+        U_Xref[i] = src.U_Xref[i];
+        V_Xref[i] = src.V_Xref[i];
+    }
+    Smooth = src.Smooth;
+
+    for (unsigned int i = 0; i < 3; ++i)
+    {
+        if (Location_Fn[i] != NULL)
+            delete Location_Fn[i];
+        if (src.Location_Fn[i] == NULL)
+            Location_Fn[i] = NULL;
+        else
+            Location_Fn[i] = src.Location_Fn[i]->Clone();
+
+        if (Direction_Fn[i] != NULL)
+            delete Direction_Fn[i];
+        if (src.Direction_Fn[i] == NULL)
+            Direction_Fn[i] = NULL;
+        else
+            Direction_Fn[i] = src.Direction_Fn[i]->Clone();
+
+    }
+
+    return *this;
+}
+
+
+
 /*****************************************************************************
 *
 * FUNCTION
@@ -256,190 +446,6 @@ void Camera::Init()
     {
         Location_Fn[i]  = NULL;
         Direction_Fn[i] = NULL;
-    }
-}
-
-/*****************************************************************************
-*
-* FUNCTION
-*
-*   Create_Camera
-*
-* INPUT
-*
-* OUTPUT
-*
-* RETURNS
-*
-* AUTHOR
-*
-*   POV-Ray Team
-*
-* DESCRIPTION
-*
-*   -
-*
-* CHANGES
-*
-*   -
-*
-******************************************************************************/
-
-Camera::Camera()
-{
-    Init();
-}
-
-
-
-/*****************************************************************************
-*
-* FUNCTION
-*
-*   Copy_Camera
-*
-* INPUT
-*
-* OUTPUT
-*
-* RETURNS
-*
-* AUTHOR
-*
-*   POV-Ray Team
-*
-* DESCRIPTION
-*
-*   -
-*
-* CHANGES
-*
-*   -
-*
-******************************************************************************/
-
-Camera& Camera::operator=(const Camera& src)
-{
-    Location    = src.Location;
-    Direction   = src.Direction;
-    Up          = src.Up;
-    Right       = src.Right;
-    Sky         = src.Sky;
-    Look_At     = src.Look_At;
-    Focal_Point = src.Focal_Point;
-
-    Focal_Distance = src.Focal_Distance;
-    Aperture = src.Aperture;
-    Blur_Samples = src.Blur_Samples;
-    Blur_Samples_Min = src.Blur_Samples_Min;
-    Confidence = src.Confidence;
-    Variance = src.Variance;
-    Type = src.Type;
-    Angle = src.Angle;
-    H_Angle = src.H_Angle;
-    V_Angle = src.V_Angle;
-
-    if (Tnormal != NULL)
-        Destroy_Tnormal(Tnormal);
-    Tnormal = src.Tnormal ? Copy_Tnormal(src.Tnormal) : NULL;
-    if (Trans != NULL)
-        Destroy_Transform(Trans);
-    Trans = src.Trans ? Copy_Transform(src.Trans) : NULL;
-
-    if (Bokeh != NULL)
-        Destroy_Pigment(Bokeh);
-    Bokeh = src.Bokeh ? Copy_Pigment(src.Bokeh) : NULL;
-
-    for (std::vector<ObjectPtr>::iterator it = Meshes.begin(); it != Meshes.end(); it++)
-        Destroy_Object(*it);
-    Meshes.clear();
-    for (std::vector<ObjectPtr>::const_iterator it = src.Meshes.begin(); it != src.Meshes.end(); it++)
-        Meshes.push_back(Copy_Object(*it));
-    Face_Distribution_Method = src.Face_Distribution_Method;
-    Rays_Per_Pixel = src.Rays_Per_Pixel;
-    Max_Ray_Distance = src.Max_Ray_Distance;
-    Mesh_Index = src.Mesh_Index;
-    for (int i = 0; i < 10; i++)
-    {
-        U_Xref[i] = src.U_Xref[i];
-        V_Xref[i] = src.V_Xref[i];
-    }
-    Smooth = src.Smooth;
-
-    for (unsigned int i = 0; i < 3; ++i)
-    {
-        if (Location_Fn[i] != NULL)
-            delete Location_Fn[i];
-        if (src.Location_Fn[i] == NULL)
-            Location_Fn[i] = NULL;
-        else
-            Location_Fn[i] = src.Location_Fn[i]->Clone();
-
-        if (Direction_Fn[i] != NULL)
-            delete Direction_Fn[i];
-        if (src.Direction_Fn[i] == NULL)
-            Direction_Fn[i] = NULL;
-        else
-            Direction_Fn[i] = src.Direction_Fn[i]->Clone();
-
-    }
-
-    return *this;
-}
-
-Camera::Camera(const Camera& src)
-{
-    Tnormal = NULL;
-    Trans = NULL;
-    Bokeh = NULL;
-    for (unsigned int i = 0; i < 3; ++i)
-    {
-        Location_Fn[i]  = NULL;
-        Direction_Fn[i] = NULL;
-    }
-    operator=(src);
-}
-
-/*****************************************************************************
-*
-* FUNCTION
-*
-*   Destroy_Camera
-*
-* INPUT
-*
-* OUTPUT
-*
-* RETURNS
-*
-* AUTHOR
-*
-*   Dieter Bayer
-*
-* DESCRIPTION
-*
-*   -
-*
-* CHANGES
-*
-*   -
-*
-******************************************************************************/
-
-Camera::~Camera()
-{
-    Destroy_Tnormal(Tnormal);
-    Destroy_Transform(Trans);
-    Destroy_Pigment(Bokeh);
-    for (std::vector<ObjectPtr>::iterator it = Meshes.begin(); it != Meshes.end(); it++)
-        Destroy_Object(*it);
-    Meshes.clear();
-    for (unsigned int i = 0; i < 3; ++i)
-    {
-        if (Location_Fn[i] != NULL)
-            delete Location_Fn[i];
-        if (Direction_Fn[i] != NULL)
-            delete Direction_Fn[i];
     }
 }
 

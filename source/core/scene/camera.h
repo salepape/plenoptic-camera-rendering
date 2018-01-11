@@ -58,6 +58,7 @@ namespace pov
 
 // Available camera types. [DB 8/94]
 
+#define CONVERGING_LENS_CAMERA  0
 #define PERSPECTIVE_CAMERA      1
 #define ORTHOGRAPHIC_CAMERA     2
 #define FISHEYE_CAMERA          3
@@ -71,6 +72,7 @@ namespace pov
 #define SPHERICAL_CAMERA       11
 #define MESH_CAMERA            12
 #define USER_DEFINED_CAMERA    13
+//#define PLENOPTIC_CAMERA     14
 
 /*****************************************************************************
 * Global typedefs
@@ -78,51 +80,51 @@ namespace pov
 
 class Camera
 {
-public:
-    Vector3d Location;
-    Vector3d Direction;
-    Vector3d Up;
-    Vector3d Right;
-    Vector3d Sky;
-    Vector3d Look_At;               // Used only to record the user's preference
-    Vector3d Focal_Point;           // Used only to record the user's preference
-    DBL Focal_Distance, Aperture;   // ARE 9/92 for focal blur.
-    int Blur_Samples;               // ARE 9/92 for focal blur.
-    int Blur_Samples_Min;           // Minimum number of blur samples to take regardless of confidence settings.
-    DBL Confidence;                 // Probability for confidence test.
-    DBL Variance;                   // Max. variance for confidence test.
-    int Type;                       // Camera type.
-    DBL Angle;                      // Viewing angle.
-    DBL H_Angle;                    // Spherical horizontal viewing angle
-    DBL V_Angle;                    // Spherical verticle viewing angle
-    TNORMAL *Tnormal;               // Primary ray pertubation.
-    TRANSFORM *Trans;               // Used only to record the user's input
-    PIGMENT *Bokeh;                 // Pigment to use for the bokeh
-    GenericScalarFunctionPtr Location_Fn[3];  // [USER_DEFINED_CAMERA] Set of functions defining the ray's origin for each screen position.
-    GenericScalarFunctionPtr Direction_Fn[3]; // [USER_DEFINED_CAMERA] Set of functions defining the ray's direction for each screen position.
+    public:
+        Vector3d Location;
+        Vector3d Direction;
+        Vector3d Up;
+        Vector3d Right;
+        Vector3d Sky;
+        Vector3d Look_At;                           // Used only to record the user's preference
+        Vector3d Focal_Point;                       // Used only to record the user's preference
+        DBL Focal_Distance, Aperture;               // ARE 9/92 for focal blur.
+        int Blur_Samples;                           // ARE 9/92 for focal blur.
+        int Blur_Samples_Min;                       // Minimum number of blur samples to take regardless of confidence settings.
+        DBL Confidence;                             // Probability for confidence test.
+        DBL Variance;                               // Max. variance for confidence test.
+        int Type;                                   // Camera type.
+        DBL Angle;                                  // Viewing angle.
+        DBL H_Angle;                                // Spherical horizontal viewing angle
+        DBL V_Angle;                                // Spherical verticle viewing angle
+        TNORMAL *Tnormal;                           // Primary ray pertubation.
+        TRANSFORM *Trans;                           // Used only to record the user's input
+        PIGMENT *Bokeh;                             // Pigment to use for the bokeh
+        GenericScalarFunctionPtr Location_Fn[3];    // [USER_DEFINED_CAMERA] Set of functions defining the ray's origin for each screen position.
+        GenericScalarFunctionPtr Direction_Fn[3];   // [USER_DEFINED_CAMERA] Set of functions defining the ray's direction for each screen position.
 
-    // the following declarations are used for the mesh camera
-    unsigned int Face_Distribution_Method;  // how to associate a pixel to a face within a mesh
-    unsigned int Rays_Per_Pixel;            // cast this many rays per pixel; never less than 1
-    bool Smooth;                            // if true, interpolate normals for dist #3
-    vector<ObjectPtr> Meshes;               // list of the meshes to be used as the camera
-    vector<unsigned int> Mesh_Index;        // used with distribution #1 to keep track of accumulated meshes
-    vector<unsigned int> U_Xref[10];        // used to speed up location of a matching face for distribution #3
-    vector<unsigned int> V_Xref[10];        // used to speed up location of a matching face for distribution #3
-    DBL Max_Ray_Distance;                   // if not 0.0, then maximum distance to look along the ray for an intersection
-    // end of mesh camera declarations
+        // the following declarations are used for the mesh camera
+        unsigned int Face_Distribution_Method;      // how to associate a pixel to a face within a mesh
+        unsigned int Rays_Per_Pixel;                // cast this many rays per pixel; never less than 1
+        bool Smooth;                                // if true, interpolate normals for dist #3
+        vector<ObjectPtr> Meshes;                   // list of the meshes to be used as the camera
+        vector<unsigned int> Mesh_Index;            // used with distribution #1 to keep track of accumulated meshes
+        vector<unsigned int> U_Xref[10];            // used to speed up location of a matching face for distribution #3
+        vector<unsigned int> V_Xref[10];            // used to speed up location of a matching face for distribution #3
+        DBL Max_Ray_Distance;                       // if not 0.0, then maximum distance to look along the ray for an intersection
 
-    Camera();
-    Camera(const Camera& src);
-    ~Camera();
-    Camera& operator=(const Camera& rhs);
-    void Transform(const TRANSFORM *Trans);
-    void Scale(const Vector3d& Vector);
-    void Rotate(const Vector3d& Vector);
-    void Translate(const Vector3d& Vector);
+        //Coplien form
+        Camera();
+        Camera(const Camera& src);
+        ~Camera();
+        Camera& operator=(const Camera& rhs);
 
-private:
-    void Init();
+        void Translate(const Vector3d& Vector);
+        void Rotate(const Vector3d& Vector);
+        void Scale(const Vector3d& Vector);
+        void Transform(const TRANSFORM *Trans);
+    private:
+        void Init();
 };
 
 /// @}
