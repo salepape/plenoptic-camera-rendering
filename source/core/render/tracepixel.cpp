@@ -54,6 +54,7 @@
 #include "core/render/trace.h"
 #include "core/scene/object.h"
 #include "core/scene/scenedata.h"
+#include "core/scene/camera.h" // addition of this library to obtain Focal_Length variable
 #include "core/shape/mesh.h"
 
 // this must be the last file included
@@ -343,14 +344,13 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
     // Create primary ray according to the camera used.
     ray.Origin = cameraLocation;
 
-
-
     switch(camera.Type)
     {
-        // Converging lens camera. (notion de lentille l.1344)
-        DBL Object_Distance, Lens_Canvas_Distance;
-        DBL alpha_x, alpha_y;
         case CONVERGING_LENS_CAMERA:
+            // Converging lens camera. (lens notions line 1335)
+            DBL Object_Distance, Lens_Canvas_Distance;
+            DBL alpha_x, alpha_y;
+
             // Normalize this pixel position using the frame's dimensions.
             // Convert the x coordinate to be a DBL from -0.5 to 0.5.(questionable choice)
             x0 = x / width - 0.5;
@@ -358,12 +358,12 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
             // Convert the y coordinate to be a DBL from -0.5 to 0.5. (questionable choice)
             y0 = 0.5 - y / height;
 
-            // Data entry (in meters)
-            camera.Focal_Distance = 0.05;
+            // Data inputs
+            camera.Focal_Distance = 0.05;  //difference with camera.Focal_Point ? what about TracePixel.FocalBlurData.Focal_Distance ?
             Object_Distance = 2.0;
             Lens_Canvas_Distance = 0.01;
 
-            // Obtained by trigonometric functions
+            // Angles obtained by trigonometric functions
             alpha_x = atan(camera.Focal_Distance * tan(camera.H_Angle) / (camera.Focal_Distance + Object_Distance + Lens_Canvas_Distance));
             alpha_y = atan(camera.Focal_Distance * tan(camera.V_Angle) / (camera.Focal_Distance + Object_Distance + Lens_Canvas_Distance));
 
@@ -939,30 +939,6 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
 
             InitRayContainerState(ray, true);
             break;
-
-
-        /*
-        case PLENOPTIC_CAMERA:
-            // Convert the x coordinate to be a DBL from ... to ....
-            x0 = ...;
-
-            // Convert the y coordinate to be a DBL from ... to ....
-            y0 = ...;
-
-            // Create primary ray.
-            ...
-
-            // Do focal blurring (by Dan Farmer).
-            if(useFocalBlur)
-            {
-                JitterCameraRay(ray, x, y, ray_number);
-            }
-
-            InitRayContainerState(ray, useFocalBlur);
-
-            break;
-        */
-
 
         default:
             throw POV_EXCEPTION_STRING("Unknown camera type in CreateCameraRay().");
