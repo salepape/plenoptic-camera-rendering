@@ -346,10 +346,11 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
 
     switch(camera.Type)
     {
-        case CONVERGING_LENS_CAMERA:
+        case PERSPECTIVE_CAMERA:
             // Converging lens camera. (lens notions line 1335)
-            DBL Object_Distance, Lens_Canvas_Distance;
+            DBL Lens_Canvas_Distance, Focal_Length;
             DBL alpha_x, alpha_y;
+            DBL x_image, y_image, z_image, x_length, y_length;
 
             // Normalize this pixel position using the frame's dimensions.
             // Convert the x coordinate to be a DBL from -0.5 to 0.5.(questionable choice)
@@ -359,13 +360,20 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
             y0 = 0.5 - y / height;
 
             // Data inputs
-            camera.Focal_Distance = 0.05;  //difference with camera.Focal_Point ? what about TracePixel.FocalBlurData.Focal_Distance ?
-            Object_Distance = 2.0;
+            Focal_Length = 0.005;  //difference with camera.Focal_Point ? what about TracePixel.FocalBlurData.Focal_Distance ?
             Lens_Canvas_Distance = 0.01;
 
-            // Angles obtained by trigonometric functions
-            alpha_x = atan(camera.Focal_Distance * tan(camera.H_Angle) / (camera.Focal_Distance + Object_Distance + Lens_Canvas_Distance));
-            alpha_y = atan(camera.Focal_Distance * tan(camera.V_Angle) / (camera.Focal_Distance + Object_Distance + Lens_Canvas_Distance));
+            // Computing of image coordinates
+            z_image = -ray.Origin[0]/((ray.Origin[0]/ray.Origin[2])-(ray.Origin[1]/Focal_Length));
+            x_image = z_image*ray.Origin[0]/ray.Origin[2];
+            y_image = z_image*ray.Origin[1]/ray.Origin[2];
+
+            // Computing of projected rays angles
+            y_length = ray.Origin[1] + y_image - tan(camera.V_Angle) * ray.Origin[2];
+            x_length = ray.Origin[0] + x_image - tan(camera.H_Angle) * ray.Origin[2];
+
+            alpha_x = 90 - atan(z_image/x_length);
+            alpha_y = 90 - atan(z_image/y_length);
 
             ray.Direction = cameraDirection + x0 * cameraRight * alpha_x + y0 * cameraUp * alpha_y;
 
@@ -380,7 +388,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
             break;
 
         // Perspective projection (Pinhole camera; POV standard).
-        case PERSPECTIVE_CAMERA:
+        /*case PERSPECTIVE_CAMERA:
             // Convert the x coordinate to be a DBL from -0.5 to 0.5.
             x0 = x / width - 0.5;
 
@@ -397,7 +405,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
             }
 
             InitRayContainerState(ray, useFocalBlur);
-            break;
+            break;*/
 
         // Orthographic projection.
         case ORTHOGRAPHIC_CAMERA:
