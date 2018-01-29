@@ -346,6 +346,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
 
     switch(camera.Type)
     {
+        // Converging lens camera code in place of perspective_camera (ongoing bug correction)
         case PERSPECTIVE_CAMERA:
             // Converging lens camera. (lens notions line 1335)
             DBL Lens_Canvas_Distance, Focal_Length;
@@ -354,10 +355,11 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
 
             // Normalize this pixel position using the frame's dimensions.
             // Convert the x coordinate to be a DBL from -0.5 to 0.5.(questionable choice)
-            x0 = x / width - 0.5;
+            // with 0.5 take the half of pov-ray screen (with 1, all the screen but no object anymore)
+            x0 = x / width - 0.1;
 
             // Convert the y coordinate to be a DBL from -0.5 to 0.5. (questionable choice)
-            y0 = 0.5 - y / height;
+            y0 = 0.1 - y / height;
 
             // Data inputs
             Focal_Length = 0.005;  //difference with camera.Focal_Point ? what about TracePixel.FocalBlurData.Focal_Distance ?
@@ -372,6 +374,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
             y_length = ray.Origin[1] + y_image - tan(camera.V_Angle) * ray.Origin[2];
             x_length = ray.Origin[0] + x_image - tan(camera.H_Angle) * ray.Origin[2];
 
+            // angles in degrees in povray
             alpha_x = 90 - atan(z_image/x_length);
             alpha_y = 90 - atan(z_image/y_length);
 
@@ -387,8 +390,70 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
             InitRayContainerState(ray, true);
             break;
 
+        // 2 converging lens camera
+        /*
+        case DOUBLE_CONVERGING_LENS_CAMERA:
+            // Double converging lens camera.
+            DBL Lens_Canvas_Distance, Focal_Length;
+            DBL alpha_x, alpha_y;
+            DBL x_image, y_image, z_image, x_length, y_length;
+            int Nb_Lens = 2;
+
+            // Normalize this pixel position using the frame's dimensions.
+            // Convert the x coordinate to be a DBL from -0.5 to 0.5.(questionable choice)
+            x0 = x / width - 0.1;
+
+            // Convert the y coordinate to be a DBL from -0.5 to 0.5. (questionable choice)
+            y0 = 0.1 - y / height;
+
+            // Data inputs
+            Focal_Length = 0.005;
+            Lens_Canvas_Distance = 0.01;
+
+            // Computing of image coordinates
+            // We assume that if the pixel belongs to a specific area of the canvas, the mini-lens used will be different
+            // To be generalised with the plenoptic camera ...
+            // Changing base formula to be used ?
+            for(int it_x = 0; it_x < Nb_Lens; ++it_x)
+            {
+                for(int it_y = 0; it_y < Nb_Lens; ++it_y)
+                {
+                        z_image = -ray.Origin[0]/((ray.Origin[0]/ray.Origin[2])-(ray.Origin[1]/Focal_Length));
+                        x_image = z_image*ray.Origin[0]/ray.Origin[2];
+                        y_image = z_image*ray.Origin[1]/ray.Origin[2];
+
+                        // Computing of projected rays angles
+                        y_length = ray.Origin[1] + y_image - tan(camera.V_Angle) * ray.Origin[2];
+                        x_length = ray.Origin[0] + x_image - tan(camera.H_Angle) * ray.Origin[2];
+
+                        // angles in degrees in povray
+                        alpha_x = 90 - atan(z_image/x_length);
+                        alpha_y = 90 - atan(z_image/y_length);
+
+                        ray.Direction = cameraDirection + x0 * cameraRight * alpha_x + y0 * cameraUp * alpha_y;
+                        // ray.Direction = Vector3d(...); ???
+                        ray.Origin = ray.Origin + y/Nb_Lens;
+                        ++it_y;
+                    }
+                    ray.Origin = ray.Origin + x/Nb_Lens;
+                    ++it_x;
+
+                }
+
+            //ray.Origin = cameraLocation;
+
+            if(useFocalBlur)
+            {
+                JitterCameraRay(ray, x, y, ray_number);
+            }
+
+            InitRayContainerState(ray, true);
+            break;
+        */
+
         // Perspective projection (Pinhole camera; POV standard).
-        /*case PERSPECTIVE_CAMERA:
+        /*
+        case PERSPECTIVE_CAMERA:
             // Convert the x coordinate to be a DBL from -0.5 to 0.5.
             x0 = x / width - 0.5;
 
@@ -405,7 +470,8 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
             }
 
             InitRayContainerState(ray, useFocalBlur);
-            break;*/
+            break;
+        */
 
         // Orthographic projection.
         case ORTHOGRAPHIC_CAMERA:
