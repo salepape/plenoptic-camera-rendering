@@ -347,11 +347,15 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
     switch(camera.Type)
     {
         // Converging lens camera code in place of perspective_camera (ongoing bug correction)
+        // Converging lens camera
         case PERSPECTIVE_CAMERA:
-            // Converging lens camera. (lens notions line 1335)
             DBL Lens_Canvas_Distance, Focal_Length;
+            // Pixel coordinates visualised through the converging lens
+            DBL x_image, y_image, z_image;
+            // Distances between the image and the place where the ray cross the lens with respect to x and y axes
+            DBL x_length, y_length;
+            // Deviation angles with respect to the direction ray calculated for perspective camera
             DBL alpha_x, alpha_y;
-            DBL x_image, y_image, z_image, x_length, y_length;
 
             // Normalize this pixel position using the frame's dimensions.
             // Convert the x coordinate to be a DBL from -0.5 to 0.5.(questionable choice)
@@ -370,17 +374,15 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
             x_image = z_image*ray.Origin[0]/ray.Origin[2];
             y_image = z_image*ray.Origin[1]/ray.Origin[2];
 
-            // Computing of projected rays angles
+            // Intermediate calculations
             y_length = ray.Origin[1] + y_image - tan(camera.V_Angle) * ray.Origin[2];
             x_length = ray.Origin[0] + x_image - tan(camera.H_Angle) * ray.Origin[2];
 
-            // angles in degrees in povray
+            // Computing of deviation angles
             alpha_x = 90 - atan(z_image/x_length);
             alpha_y = 90 - atan(z_image/y_length);
 
             ray.Direction = cameraDirection + x0 * cameraRight * alpha_x + y0 * cameraUp * alpha_y;
-
-            //ray.Origin = cameraLocation;
 
             if(useFocalBlur)
             {
@@ -390,13 +392,17 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
             InitRayContainerState(ray, true);
             break;
 
-        // 2 converging lens camera
         /*
+        // Double converging lens camera.
         case DOUBLE_CONVERGING_LENS_CAMERA:
-            // Double converging lens camera.
             DBL Lens_Canvas_Distance, Focal_Length;
+            // Coordinates of the pixel visualised on the future image through one tiny converging lens of the matrix
+            DBL x_image, y_image, z_image;
+            // Distances between the image and the place where the ray cross the lens with respect to x and y axes
+            DBL x_length, y_length;
+            // Deviation angles with respect to the direction ray calculated for perspective camera
             DBL alpha_x, alpha_y;
-            DBL x_image, y_image, z_image, x_length, y_length;
+
             int Nb_Lens = 2;
 
             // Normalize this pixel position using the frame's dimensions.
@@ -411,11 +417,10 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
             Lens_Canvas_Distance = 0.01;
 
             ray.Origin[0] -= x/2 + x/Nb_Lens;
-            ray.Origin[1] -= y/2 + y/Nb_Lens; 
+            ray.Origin[1] -= y/2 + y/Nb_Lens;
 
             // Computing of image coordinates
             // We assume that if the pixel belongs to a specific area of the canvas, the mini-lens used will be different
-            // To be generalised with the plenoptic camera ...
             // Changing base formula to be used ?
             for(int it_x = 1; it_x <= Nb_Lens; ++it_x)
             {
@@ -426,11 +431,11 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
                         x_image = z_image*ray.Origin[0]/ray.Origin[2];
                         y_image = z_image*ray.Origin[1]/ray.Origin[2];
 
-                        // Computing of projected rays angles
+                        // Intermediate calculations
                         y_length = ray.Origin[1] + y_image - tan(camera.V_Angle) * ray.Origin[2];
                         x_length = ray.Origin[0] + x_image - tan(camera.H_Angle) * ray.Origin[2];
 
-                        // angles in degrees in povray
+                        // Computing of angles
                         alpha_x = 90 - atan(z_image/x_length);
                         alpha_y = 90 - atan(z_image/y_length);
 
