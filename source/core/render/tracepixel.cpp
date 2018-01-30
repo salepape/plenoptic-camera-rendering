@@ -410,14 +410,18 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
             Focal_Length = 0.005;
             Lens_Canvas_Distance = 0.01;
 
+            ray.Origin[0] -= x/2 + x/Nb_Lens;
+            ray.Origin[1] -= y/2 + y/Nb_Lens; 
+
             // Computing of image coordinates
             // We assume that if the pixel belongs to a specific area of the canvas, the mini-lens used will be different
             // To be generalised with the plenoptic camera ...
             // Changing base formula to be used ?
-            for(int it_x = 0; it_x < Nb_Lens; ++it_x)
+            for(int it_x = 1; it_x <= Nb_Lens; ++it_x)
             {
-                for(int it_y = 0; it_y < Nb_Lens; ++it_y)
+                for(int it_y = 1; it_y <= Nb_Lens; ++it_y)
                 {
+                        // Computing of image coordinates
                         z_image = -ray.Origin[0]/((ray.Origin[0]/ray.Origin[2])-(ray.Origin[1]/Focal_Length));
                         x_image = z_image*ray.Origin[0]/ray.Origin[2];
                         y_image = z_image*ray.Origin[1]/ray.Origin[2];
@@ -432,12 +436,11 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
 
                         ray.Direction = cameraDirection + x0 * cameraRight * alpha_x + y0 * cameraUp * alpha_y;
                         // ray.Direction = Vector3d(...); ???
-                        ray.Origin = ray.Origin + y/Nb_Lens;
+                        ray.Origin[1] = ray.Origin[1] + y/Nb_Lens;
                         ++it_y;
                     }
-                    ray.Origin = ray.Origin + x/Nb_Lens;
+                    ray.Origin[0] = ray.Origin[0] + x/Nb_Lens;
                     ++it_x;
-
                 }
 
             //ray.Origin = cameraLocation;
