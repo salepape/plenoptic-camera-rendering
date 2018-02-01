@@ -153,6 +153,7 @@ const RESERVED_WORD Reserved_Words[] = {
     { CONTAINED_BY_TOKEN,           "contained_by" },
     { CONTROL0_TOKEN,               "control0" },
     { CONTROL1_TOKEN,               "control1" },
+    //{CONVERGING_LENS_TOKEN, "converging_lens"},
     { COORDS_TOKEN,                 "coords" },
     { COS_TOKEN,                    "cos" },
     { COSH_TOKEN,                   "cosh" },
@@ -194,6 +195,7 @@ const RESERVED_WORD Reserved_Words[] = {
     { DISTANCE_MAXIMUM_TOKEN,       "distance_maximum" },
 #endif
     { DIV_TOKEN,                    "div" },
+    //{DOUBLE_CONVERGING_LENS_TOKEN, "double_converging_lens"},
     { DOUBLE_ILLUMINATE_TOKEN,      "double_illuminate" },
     { DEBUG_TAG_TOKEN,              "dtag" },
 

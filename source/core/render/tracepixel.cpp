@@ -347,7 +347,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
     switch(camera.Type)
     {
         // Converging lens camera code in place of perspective_camera (ongoing bug correction)
-        // Converging lens camera
+        // Converging lens camera case CONVERGING_LENS_CAMERA
         case PERSPECTIVE_CAMERA:
             DBL Lens_Canvas_Distance, Focal_Length;
             // Pixel coordinates visualised through the converging lens
