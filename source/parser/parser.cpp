@@ -1458,15 +1458,6 @@ void Parser::Parse_Camera (Camera& Cam)
         New.Angle       = HUGE_VAL;
 
         EXPECT
-            /*
-            CASE (CONVERGING_LENS_TOKEN)
-                New.Type = CONVERGING_LENS_CAMERA;
-            END_CASE
-
-            CASE (DOUBLE_CONVERGING_LENS_TOKEN)
-                New.Type = DOUBLE_CONVERGING_LENS_CAMERA;
-            END_CASE
-            */
             CASE (PERSPECTIVE_TOKEN)
                 New.Type = PERSPECTIVE_CAMERA;
             END_CASE
@@ -1525,11 +1516,6 @@ void Parser::Parse_Camera (Camera& Cam)
 
         switch(New.Type)
         {
-            /*
-            case CONVERGING_LENS_CAMERA;
-            case DOUBLE_CONVERGING_LENS_CAMERA;
-            */
-
             case PERSPECTIVE_CAMERA:
                 EXPECT
                     CASE (ANGLE_TOKEN)

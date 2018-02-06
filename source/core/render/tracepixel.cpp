@@ -346,8 +346,28 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
 
     switch(camera.Type)
     {
+        // Perspective projection (Pinhole camera; POV standard)
+        case PERSPECTIVE_CAMERA:
+            // Convert the x coordinate to be a DBL from -0.5 to 0.5.
+            x0 = x / width - 0.5;
+
+            // Convert the y coordinate to be a DBL from -0.5 to 0.5.
+            y0 = 0.5 - y / height;
+
+            // Create primary ray.
+            ray.Direction = cameraDirection + x0 * cameraRight + y0 * cameraUp;
+
+            // Do focal blurring (by Dan Farmer).
+            if(useFocalBlur)
+            {
+                JitterCameraRay(ray, x, y, ray_number);
+            }
+
+            InitRayContainerState(ray, useFocalBlur);
+            break;
         // Converging lens camera code in place of perspective_camera (ongoing bug correction)
-        // Converging lens camera case CONVERGING_LENS_CAMERA
+        // Converging lens camera
+        /*
         case PERSPECTIVE_CAMERA:
             DBL Lens_Canvas_Distance, Focal_Length;
             // Pixel coordinates visualised through the converging lens
@@ -392,7 +412,6 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
             InitRayContainerState(ray, true);
             break;
 
-        /*
         // Double converging lens camera.
         case DOUBLE_CONVERGING_LENS_CAMERA:
             DBL Lens_Canvas_Distance, Focal_Length;
@@ -456,28 +475,6 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
             }
 
             InitRayContainerState(ray, true);
-            break;
-        */
-
-        // Perspective projection (Pinhole camera; POV standard).
-        /*
-        case PERSPECTIVE_CAMERA:
-            // Convert the x coordinate to be a DBL from -0.5 to 0.5.
-            x0 = x / width - 0.5;
-
-            // Convert the y coordinate to be a DBL from -0.5 to 0.5.
-            y0 = 0.5 - y / height;
-
-            // Create primary ray.
-            ray.Direction = cameraDirection + x0 * cameraRight + y0 * cameraUp;
-
-            // Do focal blurring (by Dan Farmer).
-            if(useFocalBlur)
-            {
-                JitterCameraRay(ray, x, y, ray_number);
-            }
-
-            InitRayContainerState(ray, useFocalBlur);
             break;
         */
 
