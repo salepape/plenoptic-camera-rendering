@@ -1462,6 +1462,16 @@ void Parser::Parse_Camera (Camera& Cam)
                 New.Type = PERSPECTIVE_CAMERA;
             END_CASE
 
+    	    /*
+    	    CASE (CONVERGING_LENS_TOKEN)
+                    New.Type = CONVERGING_LENS_CAMERA;
+                END_CASE
+
+    	    CASE (PLENOPTIC_TOKEN)
+                    New.Type = PLENOPTIC_CAMERA;
+                END_CASE
+    	    */
+
             CASE (ORTHOGRAPHIC_TOKEN)
                 New.Type = ORTHOGRAPHIC_CAMERA;
             END_CASE
@@ -1536,6 +1546,10 @@ void Parser::Parse_Camera (Camera& Cam)
                     END_CASE
                 END_EXPECT
                 break;
+            /*
+            case CONVERGING_LENS_CAMERA;
+            case PLENOPTIC_CAMERA;
+            */
             case ORTHOGRAPHIC_CAMERA:
                 EXPECT
                     CASE (ANGLE_TOKEN)
@@ -1842,6 +1856,16 @@ void Parser::Parse_Camera (Camera& Cam)
             CASE (PERSPECTIVE_TOKEN)
                 New.Type = PERSPECTIVE_CAMERA;
             END_CASE
+
+            /*
+            CASE (CONVERGING_LENS_TOKEN)
+                New.Type = CONVERGING_LENS_CAMERA;
+            END_CASE
+
+            CASE (PLENOPTIC_TOKEN)
+                New.Type = PLENOPTIC_CAMERA;
+            END_CASE
+            */
 
             CASE (ORTHOGRAPHIC_TOKEN)
                 New.Type = ORTHOGRAPHIC_CAMERA;

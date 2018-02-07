@@ -405,8 +405,8 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
             InitRayContainerState(ray, true);
             break;
 
-        // Double converging lens camera.
-        case DOUBLE_CONVERGING_LENS_CAMERA:
+        // Double converging lens camera without principal converging lens for the moment.
+        case PLENOPTIC_CAMERA:
             // Declaration of several useful distances
             DBL Lens_Canvas_Distance, Focal_Length;
             // Visualisation of pixel coordinates through the matrix of tiny lenses
