@@ -365,10 +365,9 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
 
             InitRayContainerState(ray, useFocalBlur);
             break;
-        // Converging lens camera code in place of perspective_camera (ongoing bug correction)
         // Converging lens camera
         /*
-        case PERSPECTIVE_CAMERA:
+        case CONVERGING_LENS_CAMERA:
             DBL Lens_Canvas_Distance, Focal_Length;
             // Pixel coordinates visualised through the converging lens
             DBL x_image, y_image, z_image;
@@ -379,11 +378,10 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
 
             // Normalize this pixel position using the frame's dimensions.
             // Convert the x coordinate to be a DBL from -0.5 to 0.5.(questionable choice)
-            // with 0.5 take the half of pov-ray screen (with 1, all the screen but no object anymore)
-            x0 = x / width - 0.1;
+            x0 = x / width - 0.5;
 
             // Convert the y coordinate to be a DBL from -0.5 to 0.5. (questionable choice)
-            y0 = 0.1 - y / height;
+            y0 = 0.5 - y / height;
 
             // Data inputs
             Focal_Length = 0.005;  //difference with camera.Focal_Point ? what about TracePixel.FocalBlurData.Focal_Distance ?
@@ -498,8 +496,6 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
 
             InitRayContainerState(ray, true);
             break;
-
-
 
         // Fisheye camera.
         case FISHEYE_CAMERA:
