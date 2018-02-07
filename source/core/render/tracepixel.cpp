@@ -365,42 +365,37 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
 
             InitRayContainerState(ray, useFocalBlur);
             break;
-        // Converging lens camera
+
         /*
+        // Converging lens camera.
         case CONVERGING_LENS_CAMERA:
-            DBL Lens_Canvas_Distance, Focal_Length;
-            // Pixel coordinates visualised through the converging lens
+            // Declaration of several useful distances
+            DBL Lens_Canvas_Distance, Focal_Length; // Focal_Distance in tracepixel.h l.94 ?
+            // Visualisation of pixel coordinates through the converging lens
             DBL x_image, y_image, z_image;
-            // Distances between the image and the place where the ray cross the lens with respect to x and y axes
-            DBL x_length, y_length;
-            // Deviation angles with respect to the direction ray calculated for perspective camera
+            // Deviation angles with respect to the central ray
             DBL alpha_x, alpha_y;
 
-            // Normalize this pixel position using the frame's dimensions.
-            // Convert the x coordinate to be a DBL from -0.5 to 0.5.(questionable choice)
+            // Normalization of the pixel position using the frame's dimensions.
+            // Conversion of the x coordinate to be a DBL from -0.5 to 0.5 (questionable choice)
             x0 = x / width - 0.5;
 
-            // Convert the y coordinate to be a DBL from -0.5 to 0.5. (questionable choice)
+            // Conversion of the y coordinate to be a DBL from -0.5 to 0.5 (questionable choice)
             y0 = 0.5 - y / height;
 
             // Data inputs
-            Focal_Length = 0.005;  //difference with camera.Focal_Point ? what about TracePixel.FocalBlurData.Focal_Distance ?
+            Focal_Length = 0.005;  // camera.Focal_Point ?
             Lens_Canvas_Distance = 0.01;
+            // alpha_x ? alpha_y
 
             // Computing of image coordinates
-            z_image = -ray.Origin[0]/((ray.Origin[0]/ray.Origin[2])-(ray.Origin[1]/Focal_Length));
-            x_image = z_image*ray.Origin[0]/ray.Origin[2];
-            y_image = z_image*ray.Origin[1]/ray.Origin[2];
+            // z_image : distance between the lens and the image
+            z_image = (Focal_Length * Lens_Canvas_Distance) / (Focal_Length + Lens_Canvas_Distance);
+            x_image = tan(alpha_y) * z_image - ray.Origin[0];
+            y_image = tan(alpha_x) * z_image - ray.Origin[1];;
 
-            // Intermediate calculations
-            y_length = ray.Origin[1] + y_image - tan(camera.V_Angle) * ray.Origin[2];
-            x_length = ray.Origin[0] + x_image - tan(camera.H_Angle) * ray.Origin[2];
-
-            // Computing of deviation angles
-            alpha_x = 90 - atan(z_image/x_length);
-            alpha_y = 90 - atan(z_image/y_length);
-
-            ray.Direction = cameraDirection + x0 * cameraRight * alpha_x + y0 * cameraUp * alpha_y;
+            // Create primary ray
+            ray.Direction = cameraDirection + x0 * x_image * cameraRight + y0 * y_image * cameraUp;
 
             if(useFocalBlur)
             {
@@ -412,60 +407,44 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
 
         // Double converging lens camera.
         case DOUBLE_CONVERGING_LENS_CAMERA:
+            // Declaration of several useful distances
             DBL Lens_Canvas_Distance, Focal_Length;
-            // Coordinates of the pixel visualised on the future image through one tiny converging lens of the matrix
+            // Visualisation of pixel coordinates through the matrix of tiny lenses
             DBL x_image, y_image, z_image;
-            // Distances between the image and the place where the ray cross the lens with respect to x and y axes
-            DBL x_length, y_length;
-            // Deviation angles with respect to the direction ray calculated for perspective camera
-            DBL alpha_x, alpha_y;
-
+            // Deviation angles with respect to the central ray
+            DBL alpha_x, alpha_y, vision_angle;
+            // Number of lenses in the matrix
             int Nb_Lens = 2;
 
-            // Normalize this pixel position using the frame's dimensions.
-            // Convert the x coordinate to be a DBL from -0.5 to 0.5.(questionable choice)
-            x0 = x / width - 0.1;
+            // Normalization of the pixel position using the frame's dimensions.
+            // Conversion of the x coordinate to be a DBL from -0.5 to 0.5 (questionable choice)
+            x0 = x / width - 0.5;
 
-            // Convert the y coordinate to be a DBL from -0.5 to 0.5. (questionable choice)
-            y0 = 0.1 - y / height;
+            // Conversion of the y coordinate to be a DBL from -0.5 to 0.5 (questionable choice)
+            y0 = 0.5 - y / height;
 
             // Data inputs
             Focal_Length = 0.005;
             Lens_Canvas_Distance = 0.01;
+            vision_angle = ?;
 
-            ray.Origin[0] -= x/2 + x/Nb_Lens;
-            ray.Origin[1] -= y/2 + y/Nb_Lens;
-
-            // Computing of image coordinates
-            // We assume that if the pixel belongs to a specific area of the canvas, the mini-lens used will be different
-            // Changing base formula to be used ?
+            // Iterating over the content of the lens matrix
             for(int it_x = 1; it_x <= Nb_Lens; ++it_x)
             {
                 for(int it_y = 1; it_y <= Nb_Lens; ++it_y)
                 {
-                        // Computing of image coordinates
-                        z_image = -ray.Origin[0]/((ray.Origin[0]/ray.Origin[2])-(ray.Origin[1]/Focal_Length));
-                        x_image = z_image*ray.Origin[0]/ray.Origin[2];
-                        y_image = z_image*ray.Origin[1]/ray.Origin[2];
-
-                        // Intermediate calculations
-                        y_length = ray.Origin[1] + y_image - tan(camera.V_Angle) * ray.Origin[2];
-                        x_length = ray.Origin[0] + x_image - tan(camera.H_Angle) * ray.Origin[2];
-
-                        // Computing of angles
-                        alpha_x = 90 - atan(z_image/x_length);
-                        alpha_y = 90 - atan(z_image/y_length);
-
-                        ray.Direction = cameraDirection + x0 * cameraRight * alpha_x + y0 * cameraUp * alpha_y;
-                        // ray.Direction = Vector3d(...); ???
-                        ray.Origin[1] = ray.Origin[1] + y/Nb_Lens;
-                        ++it_y;
+                    // If the pixel is in the current visualisation cone
+                    if(...)
+                    {
+                        // The pixel is projected in that lens (and stop)
+                        // ray.Direction = ...;
+                        // break;
                     }
-                    ray.Origin[0] = ray.Origin[0] + x/Nb_Lens;
-                    ++it_x;
+                    // Else the pixel is not defined (black) and will be projected in an other lens
+                    ++it_y;
                 }
-
-            //ray.Origin = cameraLocation;
+                ++it_x;
+            }
 
             if(useFocalBlur)
             {

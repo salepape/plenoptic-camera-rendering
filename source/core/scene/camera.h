@@ -58,7 +58,6 @@ namespace pov
 
 // Available camera types. [DB 8/94]
 
-//#define CONVERGING_LENS_CAMERA  0
 #define PERSPECTIVE_CAMERA      1
 #define ORTHOGRAPHIC_CAMERA     2
 #define FISHEYE_CAMERA          3
@@ -72,7 +71,8 @@ namespace pov
 #define SPHERICAL_CAMERA       11
 #define MESH_CAMERA            12
 #define USER_DEFINED_CAMERA    13
-//#define PLENOPTIC_CAMERA     14
+//#define CONVERGING_LENS_CAMERA  14
+//#define PLENOPTIC_CAMERA     15
 
 /*****************************************************************************
 * Global typedefs
