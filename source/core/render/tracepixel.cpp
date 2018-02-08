@@ -384,15 +384,18 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
             y0 = 0.5 - y / height;
 
             // Data inputs
-            Focal_Length = 0.005;  // camera.Focal_Point ?
+            Focal_Length = 0.005;  // camera.Focal_Point ?; in meters normally
             Lens_Canvas_Distance = 0.01;
-            // alpha_x ? alpha_y
+
+            // Computing of angles
+            alpha_x = atan(ray.Origin[1] / Focal_Length);
+            alpha_y = atan(ray.Origin[0] / Focal_Length);
 
             // Computing of image coordinates
             // z_image : distance between the lens and the image
             z_image = (Focal_Length * Lens_Canvas_Distance) / (Focal_Length + Lens_Canvas_Distance);
             x_image = tan(alpha_y) * z_image - ray.Origin[0];
-            y_image = tan(alpha_x) * z_image - ray.Origin[1];;
+            y_image = tan(alpha_x) * z_image - ray.Origin[1];
 
             // Create primary ray
             ray.Direction = cameraDirection + x0 * x_image * cameraRight + y0 * y_image * cameraUp;
