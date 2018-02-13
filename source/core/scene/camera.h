@@ -71,7 +71,7 @@ namespace pov
 #define SPHERICAL_CAMERA       11
 #define MESH_CAMERA            12
 #define USER_DEFINED_CAMERA    13
-//#define CONVERGING_LENS_CAMERA  14
+#define CONVERGING_LENS_CAMERA  14
 //#define PLENOPTIC_CAMERA     15
 
 /*****************************************************************************

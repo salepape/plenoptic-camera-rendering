@@ -40,6 +40,8 @@
 
 // Unit header file must be the first file included within POV-Ray *.cpp files (pulls in config)
 #include "core/render/tracepixel.h"
+#include <iostream>
+
 
 #include <vector>
 
@@ -68,6 +70,7 @@ extern unsigned short *hashTable; // GLOBAL VARIABLE
 #else
 extern ALIGN16 unsigned short hashTable[]; // GLOBAL VARIABLE
 #endif
+
 
 const int Grid1Size    = 4;
 const int HexGrid2Size = 7;
@@ -366,7 +369,6 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
             InitRayContainerState(ray, useFocalBlur);
             break;
 
-        /*
         // Converging lens camera.
         case CONVERGING_LENS_CAMERA:
             // Declaration of several useful distances
@@ -384,10 +386,15 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
             y0 = 0.5 - y / height;
 
             // Data inputs
-            Focal_Length = 0.005;  // camera.Focal_Point ?; in meters normally
+            Focal_Length = 50;  // camera.Focal_Point ?; in meters normally
             Lens_Canvas_Distance = 0.01;
 
-            // Computing of angles
+            ray.Origin = cameraLocation + 0.5 * cameraRight + 0.5 * cameraUp - Lens_Canvas_Distance * camera.Look_At;
+
+            std::cout << ray.Origin[0] << " " << ray.Origin[1] << " " << ray.Origin[2] << std::endl;
+            std::cout << "--------------------" << std::endl;
+
+            // Computing of angles (in degrees by default)
             alpha_x = atan(ray.Origin[1] / Focal_Length);
             alpha_y = atan(ray.Origin[0] / Focal_Length);
 
@@ -408,6 +415,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
             InitRayContainerState(ray, true);
             break;
 
+        /*
         // Double converging lens camera without principal converging lens for the moment.
         case PLENOPTIC_CAMERA:
             // Declaration of several useful distances

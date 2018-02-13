@@ -153,7 +153,7 @@ const RESERVED_WORD Reserved_Words[] = {
     { CONTAINED_BY_TOKEN,           "contained_by" },
     { CONTROL0_TOKEN,               "control0" },
     { CONTROL1_TOKEN,               "control1" },
-    //{ CONVERGING_LENS_TOKEN,        "converging_lens" },
+    { CONVERGING_LENS_TOKEN,        "converging_lens" },
     { COORDS_TOKEN,                 "coords" },
     { COS_TOKEN,                    "cos" },
     { COSH_TOKEN,                   "cosh" },
