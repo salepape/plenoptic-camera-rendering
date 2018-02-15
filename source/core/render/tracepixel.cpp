@@ -178,6 +178,8 @@ static const Vector2d HexGrid4[HexGrid4Size] =
     Vector2d( 0.000000, -0.250000),
 };
 
+// int compteur = 0;
+
 inline int PseudoRandom(int v)
 {
     return int(hashTable[int(v & 0x0fff)]);
@@ -378,6 +380,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
             // Deviation angles with respect to the central ray
             DBL alpha_x, alpha_y;
 
+
             // Normalization of the pixel position using the frame's dimensions.
             // Conversion of the x coordinate to be a DBL from -0.5 to 0.5 (questionable choice)
             x0 = x / width - 0.5;
@@ -386,23 +389,28 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
             y0 = 0.5 - y / height;
 
             // Data inputs
-            Focal_Length = 50;  // camera.Focal_Point ?; in meters normally
+            Focal_Length = 500;  // camera.Focal_Point ?; in meters normally
             Lens_Canvas_Distance = 0.01;
 
+            // Selon stat povray, 1000000 pixels utilisés pour générer l'image, soit 1000 x 1000
             ray.Origin = cameraLocation + 0.5 * cameraRight + 0.5 * cameraUp - Lens_Canvas_Distance * camera.Look_At;
+            //compteur++;
+            std::cout << compteur << std::endl;
 
             std::cout << ray.Origin[0] << " " << ray.Origin[1] << " " << ray.Origin[2] << std::endl;
             std::cout << "--------------------" << std::endl;
 
             // Computing of angles (in degrees by default)
-            alpha_x = atan(ray.Origin[1] / Focal_Length);
-            alpha_y = atan(ray.Origin[0] / Focal_Length);
+            //alpha_x = atan(ray.Origin[1] / Focal_Length);
+            //alpha_y = atan(ray.Origin[0] / Focal_Length);
 
             // Computing of image coordinates
             // z_image : distance between the lens and the image
             z_image = (Focal_Length * Lens_Canvas_Distance) / (Focal_Length + Lens_Canvas_Distance);
-            x_image = tan(alpha_y) * z_image - ray.Origin[0];
-            y_image = tan(alpha_x) * z_image - ray.Origin[1];
+            x_image = (ray.Origin[0] / Focal_Length) * z_image - ray.Origin[0];
+            y_image = (ray.Origin[1] / Focal_Length) * z_image - ray.Origin[1];
+            //x_image = tan(alpha_y) * z_image - ray.Origin[0];
+            //y_image = tan(alpha_x) * z_image - ray.Origin[1];
 
             // Create primary ray
             ray.Direction = cameraDirection + x0 * x_image * cameraRight + y0 * y_image * cameraUp;
