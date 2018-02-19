@@ -178,8 +178,6 @@ static const Vector2d HexGrid4[HexGrid4Size] =
     Vector2d( 0.000000, -0.250000),
 };
 
-// int compteur = 0;
-
 inline int PseudoRandom(int v)
 {
     return int(hashTable[int(v & 0x0fff)]);
@@ -374,7 +372,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
         // Converging lens camera.
         case CONVERGING_LENS_CAMERA:
             // Declaration of several useful distances
-            DBL Lens_Canvas_Distance, Focal_Length; // Focal_Distance in tracepixel.h l.94 ?
+            DBL Lens_Canvas_Distance, Focal_Length;
             // Visualisation of pixel coordinates through the converging lens
             DBL x_image, y_image, z_image;
             // Deviation angles with respect to the central ray
@@ -389,31 +387,30 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
             y0 = 0.5 - y / height;
 
             // Data inputs
-            Focal_Length = 500;  // camera.Focal_Point ?; in meters normally
-            Lens_Canvas_Distance = 0.01;
+            Focal_Length = 5;
+            Lens_Canvas_Distance = 0.05;
 
-            // Selon stat povray, 1000000 pixels utilisés pour générer l'image, soit 1000 x 1000
-            ray.Origin = cameraLocation + 0.5 * cameraRight + 0.5 * cameraUp - Lens_Canvas_Distance * camera.Look_At;
-            //compteur++;
-            std::cout << compteur << std::endl;
+            // Selon stats povray, 1000000 pixels utilisés pour générer l'image, soit 1000 x 1000
+            ray.Origin = cameraLocation + x0 * cameraRight + y0 * cameraUp;
 
-            std::cout << ray.Origin[0] << " " << ray.Origin[1] << " " << ray.Origin[2] << std::endl;
-            std::cout << "--------------------" << std::endl;
+            // Tests to note successive origin of each ray traced according to x, y and z axes
+            //std::cout << "Origine selon x : " << ray.Origin[0] << std::endl;
+            //std::cout << "Origine selon y : " << ray.Origin[1] << std::endl;
+            //std::cout << "Origine selon z : " << ray.Origin[2] << std::endl;
 
             // Computing of angles (in degrees by default)
-            //alpha_x = atan(ray.Origin[1] / Focal_Length);
-            //alpha_y = atan(ray.Origin[0] / Focal_Length);
+            alpha_x = atan(y0 / Focal_Length);
+            alpha_y = atan(x0 / Focal_Length);
 
             // Computing of image coordinates
             // z_image : distance between the lens and the image
             z_image = (Focal_Length * Lens_Canvas_Distance) / (Focal_Length + Lens_Canvas_Distance);
-            x_image = (ray.Origin[0] / Focal_Length) * z_image - ray.Origin[0];
-            y_image = (ray.Origin[1] / Focal_Length) * z_image - ray.Origin[1];
-            //x_image = tan(alpha_y) * z_image - ray.Origin[0];
-            //y_image = tan(alpha_x) * z_image - ray.Origin[1];
+            // Not useful computings for the algorithm
+            //x_image = tan(alpha_y) * z_image - x0;
+            //y_image = tan(alpha_x) * z_image - y0;
 
-            // Create primary ray
-            ray.Direction = cameraDirection + x0 * x_image * cameraRight + y0 * y_image * cameraUp;
+            // Computing of the ray direction according to alpha_x, alpha_y angles and z_image distance
+            ray.Direction = alpha_y * cameraRight + alpha_x * cameraUp + z_image * cameraDirection;
 
             if(useFocalBlur)
             {
@@ -445,7 +442,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
             // Data inputs
             Focal_Length = 0.005;
             Lens_Canvas_Distance = 0.01;
-            vision_angle = ?;
+            vision_angle = 30;
 
             // Iterating over the content of the lens matrix
             for(int it_x = 1; it_x <= Nb_Lens; ++it_x)
