@@ -21,7 +21,8 @@ camera
 	location <8, 2, -5>
 	// direction
 	// up
-	look_at  <0, 3, 1>
+	look_at  <0, 0.5, 1>
+	// look_at  <0, 3, 1>
 	// lens_pitch 0.014
 	// lens_pitch -1
 	// mainlens_diameter 0.0

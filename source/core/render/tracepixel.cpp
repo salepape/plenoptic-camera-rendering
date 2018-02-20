@@ -378,7 +378,6 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
             // Deviation angles with respect to the central ray
             DBL alpha_x, alpha_y;
 
-
             // Normalization of the pixel position using the frame's dimensions.
             // Conversion of the x coordinate to be a DBL from -0.5 to 0.5 (questionable choice)
             x0 = x / width - 0.5;
@@ -387,33 +386,32 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
             y0 = 0.5 - y / height;
 
             // Data inputs
-            Focal_Length = 5;
+            Focal_Length = 0.5;
             Lens_Canvas_Distance = 0.05;
 
             // Selon stats povray, 1000000 pixels utilisés pour générer l'image, soit 1000 x 1000
             ray.Origin = cameraLocation + x0 * cameraRight + y0 * cameraUp;
 
             // Tests to note successive origin of each ray traced according to x, y and z axes
-            std::cout << "(x, y) : " << x << ", " << y << std::endl;
-            std::cout << "(x0, y0) : " << x0 << ", " << y0 << std::endl;
-            std::cout << "ray.Origin : " << ray.Origin[0] << ", "
-                                         << ray.Origin[1] << ", "
-                                         << ray.Origin[2] << std::endl;
-            std::getchar();
+            // std::cout << "(x, y) : " << x << ", " << y << std::endl;
+            // std::cout << "(x0, y0) : " << x0 << ", " << y0 << std::endl;
+            // std::cout << "ray.Origin : " << ray.Origin[0] << ", "
+            //                             << ray.Origin[1] << ", "
+            //                             << ray.Origin[2] << std::endl;
+            //std::getchar();
 
-            // Computing of angles (in degrees by default)
-            alpha_x = atan(y0 / Focal_Length);
-            alpha_y = atan(x0 / Focal_Length);
+            // Computing of angles (in degrees by default) not explicitly useful in ray.Direction computing
+            // alpha_x = atan2(y0, Focal_Length);
+            // alpha_y = atan2(x0, Focal_Length);
 
             // Computing of image coordinates
             // z_image : distance between the lens and the image
-            z_image = (Focal_Length * Lens_Canvas_Distance) / (Focal_Length + Lens_Canvas_Distance);
-            // Not useful computings for the algorithm
-            //x_image = tan(alpha_y) * z_image - x0;
-            //y_image = tan(alpha_x) * z_image - y0;
+            z_image = (-Focal_Length * Lens_Canvas_Distance) / (Focal_Length - Lens_Canvas_Distance);
+            x_image = x0 * z_image / Focal_Length;
+            y_image = y0 * z_image / Focal_Length;
 
             // Computing of the ray direction according to alpha_x, alpha_y angles and z_image distance
-            ray.Direction = alpha_y * cameraRight + alpha_x * cameraUp + z_image * cameraDirection;
+            ray.Direction = x_image * cameraRight + y_image * cameraUp + z_image * cameraDirection;
 
             if(useFocalBlur)
             {
