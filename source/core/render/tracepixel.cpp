@@ -394,9 +394,12 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
             ray.Origin = cameraLocation + x0 * cameraRight + y0 * cameraUp;
 
             // Tests to note successive origin of each ray traced according to x, y and z axes
-            //std::cout << "Origine selon x : " << ray.Origin[0] << std::endl;
-            //std::cout << "Origine selon y : " << ray.Origin[1] << std::endl;
-            //std::cout << "Origine selon z : " << ray.Origin[2] << std::endl;
+            std::cout << "(x, y) : " << x << ", " << y << std::endl;
+            std::cout << "(x0, y0) : " << x0 << ", " << y0 << std::endl;
+            std::cout << "ray.Origin : " << ray.Origin[0] << ", "
+                                         << ray.Origin[1] << ", "
+                                         << ray.Origin[2] << std::endl;
+            std::getchar();
 
             // Computing of angles (in degrees by default)
             alpha_x = atan(y0 / Focal_Length);
