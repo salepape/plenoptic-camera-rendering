@@ -387,7 +387,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
 
             // Data inputs
             Focal_Length = 0.5;
-            Lens_Canvas_Distance = 0.05;
+            Lens_Canvas_Distance = 50;
 
             // Selon stats povray, 1000000 pixels utilisés pour générer l'image, soit 1000 x 1000
             ray.Origin = cameraLocation + x0 * cameraRight + y0 * cameraUp;
