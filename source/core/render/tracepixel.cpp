@@ -338,6 +338,14 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
 {
     DBL x0 = 0.0, y0 = 0.0;
     DBL cx, sx, cy, sy, ty, rad, phi;
+    // Declaration of several useful distances
+    DBL Lens_Canvas_Distance, Focal_Length;
+    // Visualisation of pixel coordinates through the converging lens
+    DBL x_image, y_image, z_image;
+    // Deviation angles with respect to the central ray
+    DBL alpha_x, alpha_y, vision_angle;
+    // Number of lenses in the matrix
+    int Nb_Lens = 2;
     Vector3d V1;
     TRANSFORM Trans;
 
@@ -371,13 +379,6 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
 
         // Converging lens camera.
         case CONVERGING_LENS_CAMERA:
-            // Declaration of several useful distances
-            DBL Lens_Canvas_Distance, Focal_Length;
-            // Visualisation of pixel coordinates through the converging lens
-            DBL x_image, y_image, z_image;
-            // Deviation angles with respect to the central ray
-            DBL alpha_x, alpha_y;
-
             // Normalization of the pixel position using the frame's dimensions.
             // Conversion of the x coordinate to be a DBL from -0.5 to 0.5 (questionable choice)
             x0 = x / width - 0.5;
@@ -389,7 +390,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
             Focal_Length = 0.5;
             Lens_Canvas_Distance = 50;
 
-            // Selon stats povray, 1000000 pixels utilisés pour générer l'image, soit 1000 x 1000
+            // According to povray statistics, 1000000 pixels are used to generate the image, that is to say 1000 x 1000 pixels
             ray.Origin = cameraLocation + x0 * cameraRight + y0 * cameraUp;
 
             // Tests to note successive origin of each ray traced according to x, y and z axes
@@ -401,7 +402,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
             //std::getchar();
 
             // Computing of angles (in degrees by default) not explicitly useful in ray.Direction computing
-            // alpha_x = atan2(y0, Focal_Length);
+            // alpha_x = atan2(y0, Focal_Length); atan2 gives the result in radians
             // alpha_y = atan2(x0, Focal_Length);
 
             // Computing of image coordinates
@@ -421,18 +422,9 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
             InitRayContainerState(ray, true);
             break;
 
-        /*
         // Double converging lens camera without principal converging lens for the moment.
         case PLENOPTIC_CAMERA:
-            // Declaration of several useful distances
-            DBL Lens_Canvas_Distance, Focal_Length;
-            // Visualisation of pixel coordinates through the matrix of tiny lenses
-            DBL x_image, y_image, z_image;
-            // Deviation angles with respect to the central ray
-            DBL alpha_x, alpha_y, vision_angle;
-            // Number of lenses in the matrix
-            int Nb_Lens = 2;
-
+        /*
             // Normalization of the pixel position using the frame's dimensions.
             // Conversion of the x coordinate to be a DBL from -0.5 to 0.5 (questionable choice)
             x0 = x / width - 0.5;
@@ -441,26 +433,41 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
             y0 = 0.5 - y / height;
 
             // Data inputs
-            Focal_Length = 0.005;
-            Lens_Canvas_Distance = 0.01;
+            Focal_Length = 0.5;
+            Lens_Canvas_Distance = 50;
             vision_angle = 30;
+            // Center coordinates of the current lens
+            DBL x_center, y_center;
+            Boolean found;
+            DBL aperture = Focal_Length / 1.2; // grosse lentille ou 4 petite lentille
 
-            // Iterating over the content of the lens matrix
-            for(int it_x = 1; it_x <= Nb_Lens; ++it_x)
+            // While the pixel does not belong to a lens visualisation cone
+            while(!found)
             {
-                for(int it_y = 1; it_y <= Nb_Lens; ++it_y)
+                // Iterating over the content of the lens matrix
+                for(int it_x = 1; it_x <= Nb_Lens && !found; ++it_x)
                 {
-                    // If the pixel is in the current visualisation cone
-                    if(...)
+                    for(int it_y = 1; it_y <= Nb_Lens && !found; ++it_y)
                     {
-                        // The pixel is projected in that lens (and stop)
-                        // ray.Direction = ...;
-                        // break;
+                        // Computing of the center lens
+                        x_center =
+                        y_center =
+                        // Move the ray origin in this location
+                        ray.Origin = cameraLocation + x_center * cameraRight + y_center * cameraUp;
+                        //Vector3d equiv_ecran = ray.Origin - Lens_Canvas_Distance;
+                        // If the pixel is in the current visualisation cone
+                        if(...)
+                        {
+                            // The pixel is projected in that lens (and stop)
+                            ray.Direction = cameraDirection + x0 * cameraRight + y0 * cameraUp;
+                            found = true;
+                        }
+                        // Else the pixel is not defined (black) and the search continues
+                        ++it_y;
                     }
-                    // Else the pixel is not defined (black) and will be projected in an other lens
-                    ++it_y;
+                    ++it_x;
                 }
-                ++it_x;
+                found = true;
             }
 
             if(useFocalBlur)
@@ -471,7 +478,6 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
             InitRayContainerState(ray, true);
             break;
         */
-
         // Orthographic projection.
         case ORTHOGRAPHIC_CAMERA:
             // Convert the x coordinate to be a DBL from -0.5 to 0.5.

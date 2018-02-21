@@ -396,7 +396,7 @@ const RESERVED_WORD Reserved_Words[] = {
     { PIGMENT_PATTERN_TOKEN,        "pigment_pattern" },
     { PLANAR_TOKEN,                 "planar" },
     { PLANE_TOKEN,                  "plane" },
-    //{ PLENOPTIC_TOKEN,                  "plenoptic" },
+    { PLENOPTIC_TOKEN,              "plenoptic" },
     { PNG_TOKEN,                    "png" },
     { POINT_AT_TOKEN,               "point_at" },
     { POLARITY_TOKEN,               "polarity" },

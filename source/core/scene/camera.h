@@ -67,12 +67,12 @@ namespace pov
 #define CYL_1_CAMERA            7
 #define CYL_2_CAMERA            8
 #define CYL_3_CAMERA            9
-#define CYL_4_CAMERA           10
-#define SPHERICAL_CAMERA       11
-#define MESH_CAMERA            12
-#define USER_DEFINED_CAMERA    13
+#define CYL_4_CAMERA            10
+#define SPHERICAL_CAMERA        11
+#define MESH_CAMERA             12
+#define USER_DEFINED_CAMERA     13
 #define CONVERGING_LENS_CAMERA  14
-//#define PLENOPTIC_CAMERA     15
+#define PLENOPTIC_CAMERA        15
 
 /*****************************************************************************
 * Global typedefs
