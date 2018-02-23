@@ -424,7 +424,8 @@ void Camera::Init()
 
     /* Set default camera type and viewing angle. [DB 7/94] */
     //Type = PERSPECTIVE_CAMERA;
-    Type = CONVERGING_LENS_CAMERA;
+    Type = PLENOPTIC_CAMERA;
+    //Type = CONVERGING_LENS_CAMERA;
     Angle = 90.0;
 
     /* Default view angle for spherical camera. [MH 6/99] */
