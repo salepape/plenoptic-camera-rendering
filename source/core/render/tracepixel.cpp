@@ -436,7 +436,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
             y0 = 0.5 - y / height;
 
             // Data inputs
-            Nb_Lens = 16;                                                    // Total number of lens in the matrix
+            Nb_Lens = 4;                                                    // Total number of lens in the matrix
             // We assume that the main lens diameter is equal to the dimension of minilenses matrix
             Mini_Lens_Diameter = 1/sqrt(Nb_Lens);
             Main_Lens_Diameter = sqrt(Nb_Lens) * Mini_Lens_Diameter;
@@ -448,9 +448,9 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
             coor_center_mainlens = cameraLocation + cameraDirection * Main_Lens_Matrix_Distance;
             // Initialisation of lens center coordinates and normalized pixel coordinates : not the same unit !!!
             // We assume the lens matrix to be a square with perfect round lenses
-            coor_ref = pov::Vector3d{0.5 - Mini_Lens_Diameter / 2, 0.5 - Mini_Lens_Diameter / 2, 0.0};
+            coor_ref = pov::Vector3d{0.5 - Mini_Lens_Diameter / 2, 0.5 - Mini_Lens_Diameter / 2, 1.0}; // 0.0
             coor_center_minilens = coor_ref;
-            coor_pixel = pov::Vector3d{x0, y0, -Lens_Canvas_Distance};
+            coor_pixel = pov::Vector3d{x0, y0, 0.0}; //-Lens_Canvas_Distance
 
             // While the pixel does not belong to a lens visualisation cone, iterating over the content of the lens matrix
             for(int it_x = 0; it_x < sqrt(Nb_Lens) || !found; ++it_x)
@@ -470,7 +470,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
                     // Computing of pixel projected coordinates
                     coor_proj_pixel = pov::Vector3d{coef_x * Main_Lens_Matrix_Distance - coor_center_minilens[0], coef_y * Main_Lens_Matrix_Distance - coor_center_minilens[1], Main_Lens_Matrix_Distance};
 
-                    if(pow(coor_proj_pixel[0], 2) + pow(coor_proj_pixel[1], 2) - pow(Main_Lens_Diameter, 2) <= 0)
+                    if(pow(coor_proj_pixel[0], 2) + pow(coor_proj_pixel[1], 2) - pow(Main_Lens_Diameter / 2, 2) <= 0)
                     {
                         // The pixel is projected in that lens (and stop the research)
                         ray.Direction = cameraDirection + x0 * cameraRight + y0 * cameraUp;
@@ -479,7 +479,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
                     // Else the pixel is not defined (black) and the search continues
                     coor_center_minilens = Vector3d{coor_ref[0], coor_ref[1] + it_y * Mini_Lens_Diameter, coor_ref[2]};
                 }
-                coor_center_minilens = Vector3d{coor_ref[0] + it_x * Mini_Lens_Diameter, coor_ref[1], coor_ref[2]};   
+                coor_center_minilens = Vector3d{coor_ref[0] + it_x * Mini_Lens_Diameter, coor_ref[1], coor_ref[2]};
             }
 
             if(useFocalBlur)
