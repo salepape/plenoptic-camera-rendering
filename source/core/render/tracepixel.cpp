@@ -343,14 +343,17 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
     // Visualisation of pixel coordinates through the converging lens
     DBL x_image, y_image, z_image;
     // Deviation angles with respect to the central ray
-    DBL alpha_x, alpha_y, vision_angle, Lens_Diameter, Lens_Pixel_Distance, Lens_ConeCenter_Distance, Pixel_ConeCenter_Distance, angle;
+    DBL alpha_x, alpha_y, Lens_Pixel_Distance, Lens_ConeCenter_Distance, Pixel_ConeCenter_Distance, angle;
+    DBL Mini_Lens_Diameter, Main_Lens_Diameter, Main_Lens_Matrix_Distance, coef_x, coef_y;
+    // Vector containing the desired rotations of the lens matrix
+    Vector3d rotations = pov::Vector3d{0.0, 0.0, 0.0};
+    Vector3d coor_center_minilens, coor_center_mainlens, coor_pixel, coor_proj_pixel, coor_ref;
     //DBL aperture;
     bool found;
-    Vector3d coor_center, coor_pixel;
-    // Number of lenses in the matrix
+    // Total number of lenses in the matrix
     int Nb_Lens;
-    Vector3d V1;
     TRANSFORM Trans;
+    Vector3d V1;
 
 
     // Set ray flags
@@ -392,7 +395,6 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
 
             // Data inputs
             Focal_Length = 50;                                              // in mm
-            Lens_Canvas_Distance = 50;                                      // in mm
 
             // According to povray statistics, 1000000 pixels are used to generate the image, that is to say 1000 x 1000 pixels
             ray.Origin = cameraLocation + x0 * cameraRight + y0 * cameraUp;
@@ -434,49 +436,50 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
             y0 = 0.5 - y / height;
 
             // Data inputs
-            Focal_Length = 0.5;                                             // in mm
-            //aperture = Focal_Length / 1.2;                                // for a big lens (without unit)
-            Lens_Diameter = 0.005;                                          // for a mini lens (in mm)
-            vision_angle = 30;                                              // in degrees
-            Nb_Lens = 2;
+            Nb_Lens = 16;                                                    // Total number of lens in the matrix
+            // We assume that the main lens diameter is equal to the dimension of minilenses matrix
+            Mini_Lens_Diameter = 1/sqrt(Nb_Lens);
+            Main_Lens_Diameter = sqrt(Nb_Lens) * Mini_Lens_Diameter;
 
+            // Proportions (so not in mm) computed according to the schematic
+            Main_Lens_Matrix_Distance = 15/8;
+            Lens_Canvas_Distance = 3/8;
+
+            coor_center_mainlens = cameraLocation + cameraDirection * Main_Lens_Matrix_Distance;
             // Initialisation of lens center coordinates and normalized pixel coordinates : not the same unit !!!
-            // We assume the lens matrix to be a square
-            coor_center[0] = (0.5 - Lens_Diameter / 2); coor_center[1] = (0.5 - Lens_Diameter / 2); coor_center[2] = 1;
-            coor_pixel[0] = x0; coor_pixel[1] = y0; coor_pixel[2] = 0;
+            // We assume the lens matrix to be a square with perfect round lenses
+            coor_ref = pov::Vector3d{0.5 - Mini_Lens_Diameter / 2, 0.5 - Mini_Lens_Diameter / 2, 0.0};
+            coor_center_minilens = coor_ref;
+            coor_pixel = pov::Vector3d{x0, y0, -Lens_Canvas_Distance};
 
             // While the pixel does not belong to a lens visualisation cone, iterating over the content of the lens matrix
-            for(int it_x = 1; it_x <= Nb_Lens && !found; ++it_x)
+            for(int it_x = 0; it_x < sqrt(Nb_Lens) || !found; ++it_x)
             {
-                for(int it_y = 1; it_y <= Nb_Lens && !found; ++it_y)
+                for(int it_y = 0; it_y < sqrt(Nb_Lens) || !found; ++it_y)
                 {
-                    // Computing of the center lens --> x coordinates doesn't change because x is the only possible rotation axis of the lens matrix
-                    Compute_Rotation_Transform(&Trans, coor_center);
-                    MTransPoint(coor_center, coor_center, &Trans);
+                    Compute_Rotation_Transform(&Trans, rotations);
+                    MTransPoint(coor_center_minilens, coor_center_minilens, &Trans);
 
                     // Move the ray origin in this location
-                    ray.Origin = coor_center[2] * cameraLocation + coor_center[0] * cameraRight + coor_center[1] * cameraUp;
+                    ray.Origin = coor_center_minilens[2] * cameraLocation + coor_center_minilens[0] * cameraRight + coor_center_minilens[1] * cameraUp;
 
-                    Lens_Pixel_Distance = sqrt(pow((coor_center[0] - coor_pixel[0]), 2) + pow((coor_center[1] - coor_pixel[1]), 2) + pow((coor_center[2] - coor_pixel[2]), 2));
-                    // Find computings to calculate the distances below...
-                    Lens_ConeCenter_Distance = 10;                          // in mm
-                    Pixel_ConeCenter_Distance = 10;                         // in [-0.5; +0.5]
+                    // Computing of slopes
+                    coef_x = (coor_center_minilens[0] - coor_pixel[0])/(coor_center_minilens[2] - coor_pixel[2]);
+                    coef_y = (coor_center_minilens[1] - coor_pixel[1])/(coor_center_minilens[2] - coor_pixel[2]);
 
-                    // If the pixel is in the current visualisation cone, we use Al-Kashi formula to calculate angles --> use camera.Angle eventually ?
-                    angle = acos((-pow(Pixel_ConeCenter_Distance, 2) + pow(Lens_ConeCenter_Distance, 2) + pow(Lens_Pixel_Distance, 2)) / (2 * Lens_ConeCenter_Distance * Lens_Pixel_Distance))* M_PI_360;
+                    // Computing of pixel projected coordinates
+                    coor_proj_pixel = pov::Vector3d{coef_x * Main_Lens_Matrix_Distance - coor_center_minilens[0], coef_y * Main_Lens_Matrix_Distance - coor_center_minilens[1], Main_Lens_Matrix_Distance};
 
-                    if(angle > vision_angle)
+                    if(pow(coor_proj_pixel[0], 2) + pow(coor_proj_pixel[1], 2) - pow(Main_Lens_Diameter, 2) <= 0)
                     {
                         // The pixel is projected in that lens (and stop the research)
                         ray.Direction = cameraDirection + x0 * cameraRight + y0 * cameraUp;
                         found = true;
                     }
                     // Else the pixel is not defined (black) and the search continues
-                    ++it_y;
-                    coor_center[1] += Lens_Diameter;
+                    coor_center_minilens = Vector3d{coor_ref[0], coor_ref[1] + it_y * Mini_Lens_Diameter, coor_ref[2]};
                 }
-                ++it_x;
-                coor_center[0] += Lens_Diameter;
+                coor_center_minilens = Vector3d{coor_ref[0] + it_x * Mini_Lens_Diameter, coor_ref[1], coor_ref[2]};   
             }
 
             if(useFocalBlur)
