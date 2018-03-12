@@ -339,20 +339,27 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
     DBL x0 = 0.0, y0 = 0.0;
     DBL cx, sx, cy, sy, ty, rad, phi;
     // Declaration of several useful distances
-    DBL Lens_Canvas_Distance, Focal_Length;
+    DBL Lens_Canvas_Distance, Mini_Lens_Canvas_Distance, Focal_Length;
     // Visualisation of pixel coordinates through the converging lens
-    DBL x_image, y_image, z_image;
+    DBL x_pix_obj, y_pix_obj, z_pix_obj;
     // Deviation angles with respect to the central ray
     DBL alpha_x, alpha_y, Lens_Pixel_Distance, Lens_ConeCenter_Distance, Pixel_ConeCenter_Distance, angle;
     DBL Mini_Lens_Diameter, Main_Lens_Diameter, Main_Lens_Matrix_Distance, coef_x, coef_y;
-    // Vector containing the desired rotations of the lens matrix
-    Vector3d rotations = pov::Vector3d{0.0, 0.0, 0.0};
-    Vector3d coor_center_minilens, coor_center_mainlens, coor_pixel, coor_proj_pixel, coor_ref;
-    //DBL aperture;
-    bool found;
+    // Vector containing the desired rotations or translations of the lens matrix
+    Vector3d translations = pov::Vector3d{0.4, 0.0, 0.0};  //   [-0.5;0.5]
+    Vector3d rotations = pov::Vector3d{0.0, 0.0, 0.0};   //     in degrees
+    Vector3d coor_center_minilens, coor_center_mainlens, coor_pixel, coor_proj_pixel, coor_ref, coor_pix_obj;
+    //DBL aperture = Focal_Length / Main_Lens_Diameter;
+    DBL aperture = 1;
+
+    Vector2d sensor_size;
+    Vector3d sensor_translations = pov::Vector3d{0.0, 0.0, 0.0};
+    Vector3d sensor_rotations = pov::Vector3d{0.0, 0.0, 0.0};
+
+    bool found = false;
     // Total number of lenses in the matrix
-    int Nb_Lens;
-    TRANSFORM Trans;
+    int Nb_Lens_x, Nb_Lens_y;
+    TRANSFORM Trans, Trans1, Trans2, Trans3, Trans4;
     Vector3d V1;
 
 
@@ -394,31 +401,19 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
             y0 = 0.5 - y / height;
 
             // Data inputs
-            Focal_Length = 50;                                              // in mm
+            Focal_Length = 50;
 
             // According to povray statistics, 1000000 pixels are used to generate the image, that is to say 1000 x 1000 pixels
+            // Initializaing the ray origin to the plan of camera (ie thin lens).
             ray.Origin = cameraLocation + x0 * cameraRight + y0 * cameraUp;
 
-            // Tests to note successive origin of each ray traced according to x, y and z axes
-            // std::cout << "(x, y) : " << x << ", " << y << std::endl;
-            // std::cout << "(x0, y0) : " << x0 << ", " << y0 << std::endl;
-            // std::cout << "ray.Origin : " << ray.Origin[0] << ", "
-            //                             << ray.Origin[1] << ", "
-            //                             << ray.Origin[2] << std::endl;
-            //std::getchar();
+            // Computing of image coordinates (z_pix_obj : distance between the lens and the object)
+            z_pix_obj = (-Focal_Length * Lens_Canvas_Distance) / (Focal_Length - Lens_Canvas_Distance);
+            x_pix_obj = x0 * z_pix_obj / Focal_Length;
+            y_pix_obj = y0 * z_pix_obj / Focal_Length;
 
-            // Computing of angles (in degrees by default) not explicitly useful in ray.Direction computing
-            // alpha_x = atan2(y0, Focal_Length); atan2 gives the result in radians
-            // alpha_y = atan2(x0, Focal_Length);
-
-            // Computing of image coordinates
-            // z_image : distance between the lens and the image
-            z_image = (-Focal_Length * Lens_Canvas_Distance) / (Focal_Length - Lens_Canvas_Distance);
-            x_image = x0 * z_image / Focal_Length;
-            y_image = y0 * z_image / Focal_Length;
-
-            // Computing of the ray direction according to alpha_x, alpha_y angles and z_image distance
-            ray.Direction = x_image * cameraRight + y_image * cameraUp + z_image * cameraDirection;
+            // Computing of the ray direction according to pixel of the object coordinates
+            ray.Direction = x_pix_obj * cameraRight + y_pix_obj * cameraUp + z_pix_obj * cameraDirection;
 
             if(useFocalBlur)
                 JitterCameraRay(ray, x, y, ray_number);
@@ -426,8 +421,8 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
             InitRayContainerState(ray, true);
             break;
 
-        // Double converging lens camera without principal converging lens for the moment.
-        case PLENOPTIC_CAMERA:
+        // Microlenses (each working like pinhole) array camera.
+        case MICROLENSES_ARRAY_CAMERA:
             // Normalization of the pixel position using the frame's dimensions.
             // Conversion of the x coordinate to be a DBL from -0.5 to 0.5 (questionable choice)
             x0 = x / width - 0.5;
@@ -435,51 +430,56 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
             // Conversion of the y coordinate to be a DBL from -0.5 to 0.5 (questionable choice)
             y0 = 0.5 - y / height;
 
-            // Data inputs
-            Nb_Lens = 4;                                                    // Total number of lens in the matrix
+            // Number of lens in the minilenses matrix (according to cameraUp and cameraRight axes)
+            Nb_Lens_x = 4;
+            Nb_Lens_y = 5;
+
             // We assume that the main lens diameter is equal to the dimension of minilenses matrix
-            Mini_Lens_Diameter = 1/sqrt(Nb_Lens);
-            Main_Lens_Diameter = sqrt(Nb_Lens) * Mini_Lens_Diameter;
+            Mini_Lens_Diameter = 1.0/std::max(Nb_Lens_x, Nb_Lens_y);
+            Main_Lens_Diameter = 1.0; //sqrt(Nb_Lens) * Mini_Lens_Diameter;
 
             // Proportions (so not in mm) computed according to the schematic
-            Main_Lens_Matrix_Distance = 15/8;
-            Lens_Canvas_Distance = 3/8;
+            Main_Lens_Matrix_Distance = 15.0/8.0;
+            Mini_Lens_Canvas_Distance = 3.0/8.0;
 
             coor_center_mainlens = cameraLocation + cameraDirection * Main_Lens_Matrix_Distance;
-            // Initialisation of lens center coordinates and normalized pixel coordinates : not the same unit !!!
-            // We assume the lens matrix to be a square with perfect round lenses
-            coor_ref = pov::Vector3d{0.5 - Mini_Lens_Diameter / 2, 0.5 - Mini_Lens_Diameter / 2, 1.0}; // 0.0
+            // We assume the lens matrix to have perfect round lenses
+            coor_ref = pov::Vector3d{-Mini_Lens_Diameter * (Nb_Lens_x / 2.0 - 0.5), -Mini_Lens_Diameter * (Nb_Lens_y / 2.0 - 0.5), 0.0};
             coor_center_minilens = coor_ref;
-            coor_pixel = pov::Vector3d{x0, y0, 0.0}; //-Lens_Canvas_Distance
+            coor_pixel = pov::Vector3d{x0, y0, -Mini_Lens_Canvas_Distance};
+
+            Compute_Translation_Transform(&Trans3, translations);
+            Compute_Rotation_Transform(&Trans4, rotations);
 
             // While the pixel does not belong to a lens visualisation cone, iterating over the content of the lens matrix
-            for(int it_x = 0; it_x < sqrt(Nb_Lens) || !found; ++it_x)
+            for(int it_y = 0; it_y < Nb_Lens_y && !found; ++it_y)
             {
-                for(int it_y = 0; it_y < sqrt(Nb_Lens) || !found; ++it_y)
+                coor_center_minilens = Vector3d{coor_ref[0], coor_ref[1] + it_y * Mini_Lens_Diameter, coor_ref[2]};
+
+                for(int it_x = 0; it_x < Nb_Lens_x && !found; ++it_x)
                 {
-                    Compute_Rotation_Transform(&Trans, rotations);
-                    MTransPoint(coor_center_minilens, coor_center_minilens, &Trans);
+                    coor_center_minilens = Vector3d{coor_ref[0] + it_x * Mini_Lens_Diameter, coor_ref[1] + it_y * Mini_Lens_Diameter, coor_ref[2]};
+                    MTransPoint(coor_center_minilens, coor_center_minilens, &Trans3);
+                    MTransPoint(coor_center_minilens, coor_center_minilens, &Trans4);
 
                     // Move the ray origin in this location
-                    ray.Origin = coor_center_minilens[2] * cameraLocation + coor_center_minilens[0] * cameraRight + coor_center_minilens[1] * cameraUp;
 
+                    ray.Origin = cameraLocation + coor_center_minilens[2] * cameraDirection + coor_center_minilens[0] * cameraRight + coor_center_minilens[1] * cameraUp;
                     // Computing of slopes
                     coef_x = (coor_center_minilens[0] - coor_pixel[0])/(coor_center_minilens[2] - coor_pixel[2]);
                     coef_y = (coor_center_minilens[1] - coor_pixel[1])/(coor_center_minilens[2] - coor_pixel[2]);
 
-                    // Computing of pixel projected coordinates
+                    // Computing of projected pixel coordinates
                     coor_proj_pixel = pov::Vector3d{coef_x * Main_Lens_Matrix_Distance - coor_center_minilens[0], coef_y * Main_Lens_Matrix_Distance - coor_center_minilens[1], Main_Lens_Matrix_Distance};
 
-                    if(pow(coor_proj_pixel[0], 2) + pow(coor_proj_pixel[1], 2) - pow(Main_Lens_Diameter / 2, 2) <= 0)
+                    if(pow(coor_proj_pixel[0], 2) + pow(coor_proj_pixel[1], 2) - pow(Main_Lens_Diameter / 2.0, 2) <= 0)
                     {
-                        // The pixel is projected in that lens (and stop the research)
-                        ray.Direction = cameraDirection + x0 * cameraRight + y0 * cameraUp;
+                        // The pixel is projected in that lens with the pinhole "behaviour" (and stop the research)
+                        ray.Direction = cameraDirection + coor_proj_pixel[0] * cameraRight + coor_proj_pixel[1] * cameraUp;
                         found = true;
                     }
                     // Else the pixel is not defined (black) and the search continues
-                    coor_center_minilens = Vector3d{coor_ref[0], coor_ref[1] + it_y * Mini_Lens_Diameter, coor_ref[2]};
                 }
-                coor_center_minilens = Vector3d{coor_ref[0] + it_x * Mini_Lens_Diameter, coor_ref[1], coor_ref[2]};
             }
 
             if(useFocalBlur)
@@ -489,6 +489,95 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
                 InitRayContainerState(ray, true);
 
             break;
+
+            // Plenoptic camera.
+            case PLENOPTIC_CAMERA:
+                // Normalization of the pixel position using the frame's dimensions.
+                // Conversion of the x coordinate to be a DBL from -0.5 to 0.5 (questionable choice)
+                sensor_size = pov::Vector2d{1.0, 1.0};
+
+                x0 = x / width - 0.5;
+
+                // Conversion of the y coordinate to be a DBL from -0.5 to 0.5 (questionable choice)
+                y0 = 0.5 - y / height;
+
+                // Modification of the size of the sensor
+                x0 *= sensor_size[0];
+                y0 *= sensor_size[1];
+
+                //To condudct linear transformations for the sensor
+                /*Compute_Translation_Transform(&Trans1, sensor_translations);
+                Compute_Rotation_Transform(&Trans2, sensor_rotations);
+                MTransPoint(coor_pixel, coor_pixel, &Trans1);
+                MTransPoint(coor_pixel, coor_pixel, &Trans2);*/
+
+                // Number of lens in the minilenses matrix (according to cameraUp and cameraRight axes)
+                Nb_Lens_x = 30;
+                Nb_Lens_y = 30;
+
+                // We assume that the main lens diameter is equal to the dimension of minilenses matrix
+                Mini_Lens_Diameter = 1.0/std::max(Nb_Lens_x, Nb_Lens_y);
+                Main_Lens_Diameter = 1.0;
+
+                Focal_Length = 10.0;
+
+                // Proportions (so not in mm) of the 2 distances below computed according to the schematic
+                Main_Lens_Matrix_Distance = 15.0/8.0;
+                // Act here to change the visibility of the microlenses
+                Mini_Lens_Canvas_Distance = 0.5/8.0;
+
+                coor_center_mainlens = cameraLocation + cameraDirection * Main_Lens_Matrix_Distance;
+                // We assume the lens matrix to have perfect round lenses
+                coor_ref = pov::Vector3d{-Mini_Lens_Diameter * (Nb_Lens_x / 2.0 - 0.5), -Mini_Lens_Diameter * (Nb_Lens_y / 2.0 - 0.5), 0.0};
+                coor_center_minilens = coor_ref;
+                coor_pixel = pov::Vector3d{x0, y0, -Mini_Lens_Canvas_Distance};
+
+                //To condudct linear transformations for the microlenses array
+                //Compute_Translation_Transform(&Trans3, translations);
+                //Compute_Rotation_Transform(&Trans4, rotations);
+
+                // While the pixel does not belong to a lens visualisation cone, iterating over the content of the lens matrix
+                for(int it_y = 0; it_y < Nb_Lens_y && !found; ++it_y)
+                {
+                    coor_center_minilens = Vector3d{coor_ref[0], coor_ref[1] + it_y * Mini_Lens_Diameter, coor_ref[2]};
+
+                    for(int it_x = 0; it_x < Nb_Lens_x && !found; ++it_x)
+                    {
+                        coor_center_minilens = Vector3d{coor_ref[0] + it_x * Mini_Lens_Diameter, coor_ref[1] + it_y * Mini_Lens_Diameter, coor_ref[2]};
+                        //MTransPoint(coor_center_minilens, coor_center_minilens, &Trans3);
+                        //MTransPoint(coor_center_minilens, coor_center_minilens, &Trans4);
+
+                        // Computing of slopes
+                        coef_x = (coor_center_minilens[0] - coor_pixel[0])/(coor_center_minilens[2] - coor_pixel[2]);
+                        coef_y = (coor_center_minilens[1] - coor_pixel[1])/(coor_center_minilens[2] - coor_pixel[2]);
+
+                        // Computing of projected pixel coordinates
+                        coor_proj_pixel = pov::Vector3d{coef_x * Main_Lens_Matrix_Distance - coor_center_minilens[0], coef_y * Main_Lens_Matrix_Distance - coor_center_minilens[1], Main_Lens_Matrix_Distance};
+
+                        // Move the ray origin in this location
+
+                        ray.Origin = cameraLocation + coor_proj_pixel[2] * cameraDirection + coor_proj_pixel[0] * cameraRight + coor_proj_pixel[1] * cameraUp;
+
+                        if(pow(coor_proj_pixel[0], 2) + pow(coor_proj_pixel[1], 2) - pow(Main_Lens_Diameter / (2 * aperture), 2) <= 0)
+                        {
+                            z_pix_obj = (-Focal_Length * (Mini_Lens_Canvas_Distance + Main_Lens_Matrix_Distance)) / (Focal_Length - (Mini_Lens_Canvas_Distance + Main_Lens_Matrix_Distance));
+                            coor_pix_obj = pov::Vector3d{x0 * z_pix_obj / Focal_Length, y0 * z_pix_obj / Focal_Length, z_pix_obj};
+                            // Computing of the ray direction according to pixel of the object coordinates
+                            // The pixel is projected in that lens with the pinhole "behaviour" (and stop the research)
+                            ray.Direction = cameraDirection + coor_pix_obj[0] * cameraRight + coor_pix_obj[1] * cameraUp;
+                            found = true;
+                        }
+                        // Else the pixel is not defined (black) and the search continues
+                    }
+                }
+
+                if(useFocalBlur)
+                    JitterCameraRay(ray, x, y, ray_number);
+
+                if(found)
+                    InitRayContainerState(ray, true);
+
+                break;
 
         // Orthographic projection.
         case ORTHOGRAPHIC_CAMERA:

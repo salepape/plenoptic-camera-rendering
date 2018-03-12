@@ -30,8 +30,8 @@
 /// POV-Ray is based on the popular DKB raytracer version 2.12.
 /// DKBTrace was originally written by David K. Buck.
 /// DKBTrace Ver 2.0-2.12 were written by David K. Buck & Aaron A. Collins.
-///
 /// @endparblock
+///
 ///
 //******************************************************************************
 
@@ -334,6 +334,7 @@ const RESERVED_WORD Reserved_Words[] = {
     { METALLIC_TOKEN,               "metallic" },
     { METHOD_TOKEN,                 "method" },
     { METRIC_TOKEN,                 "metric" },
+    { MICROLENSES_ARRAY_TOKEN,      "microlenses_array" },
     { MIN_TOKEN,                    "min" },
     { MIN_EXTENT_TOKEN,             "min_extent" },
     { MINIMUM_REUSE_TOKEN,          "minimum_reuse" },

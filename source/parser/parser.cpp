@@ -1466,6 +1466,10 @@ void Parser::Parse_Camera (Camera& Cam)
                     New.Type = CONVERGING_LENS_CAMERA;
                 END_CASE
 
+            CASE (MICROLENSES_ARRAY_TOKEN)
+                        New.Type = MICROLENSES_ARRAY_CAMERA;
+                    END_CASE
+
     	    CASE (PLENOPTIC_TOKEN)
                     New.Type = PLENOPTIC_CAMERA;
                 END_CASE
@@ -1545,6 +1549,7 @@ void Parser::Parse_Camera (Camera& Cam)
                 END_EXPECT
                 break;
             case CONVERGING_LENS_CAMERA:
+            case MICROLENSES_ARRAY_CAMERA:
             case PLENOPTIC_CAMERA:
             case ORTHOGRAPHIC_CAMERA:
                 EXPECT
@@ -1855,6 +1860,10 @@ void Parser::Parse_Camera (Camera& Cam)
 
             CASE (CONVERGING_LENS_TOKEN)
                 New.Type = CONVERGING_LENS_CAMERA;
+            END_CASE
+
+            CASE (MICROLENSES_ARRAY_TOKEN)
+                New.Type = MICROLENSES_ARRAY_CAMERA;
             END_CASE
 
             CASE (PLENOPTIC_TOKEN)
